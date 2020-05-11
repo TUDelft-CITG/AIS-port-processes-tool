@@ -1,5 +1,5 @@
 # Loading the data
-# For now: load clean data set from RHDHV AIS website (AWS server) [csv file]
+# For now: load data set from RHDHV AIS website (AWS server) [csv file]
 
 # Loading and importing packages
 import pandas as pd
