@@ -7,7 +7,6 @@ import gmplot
 import matplotlib.pyplot as plt
 from data_cleaning import drop_and_report
 
-# todo deze stap koppelen aan dashboard/ koppelen van map view met output van deze coordinaten
 
 # """" Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
 #     example coordX = (lon, lat) """
@@ -15,7 +14,6 @@ coord1 = (4.033257, 51.956685)
 coord2 = (4.057206, 51.958485)
 coord3 = (4.056691, 51.960019)
 coord4 = (4.033087, 51.958406)
-
 
 
 """" Input latitude and longitude locations of larger polygon. Every coordinate is a corner of the polygon,
