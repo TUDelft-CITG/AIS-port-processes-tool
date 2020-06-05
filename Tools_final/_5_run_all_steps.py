@@ -360,13 +360,13 @@ def run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier):
 # Test handle
 if __name__ == '__main__':
     # Load raw data
-    df = pd.read_csv('Raw_data_lisbon.csv')
+    df = pd.read_csv('Data-frames/df_all.csv')
 
     # Run all steps
     df_new = run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier)
 
     # Export data set
-    df_new.to_csv('Final_df_lb_lisbon.csv')
+    df_new.to_csv('Data-frames/Final_df_lb_lisbon.csv')
 
 
 

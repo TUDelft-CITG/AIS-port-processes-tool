@@ -103,7 +103,7 @@ def sort_by_terminal_entry_rel(df):
 # Test handle
 if __name__ == '__main__':
     # Load raw data
-    df = pd.read_csv('Final_df_lb_lisbon.csv')
+    df = pd.read_csv('Data-frames/Final_df_lb_lisbon.csv')
 
     # Add service and waiting times
     df = service_waiting_times(df)
