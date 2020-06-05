@@ -6,8 +6,9 @@ import pandas as pd
 from shapely.geometry import Polygon
 from shapely.geometry import Point
 import gmplot
+from datetime import timedelta
 
-#test
+
 def adjust_rhdhv_data(data):
     # Remove unnecessary columns
     data = data.copy()
@@ -140,12 +141,23 @@ def label_vessel_tracks(data):
     track_numbers_anch = 0
     data['track_number_term'] = 0
     data['track_number_anch'] = 0
+    data.timestamp = pd.to_datetime(data.timestamp, format='%Y-%m-%d %H:%M')
     for row in data.itertuples():
-        if row.Index != 0 and row.in_terminal == 1 and data.at[row.Index - 1, 'in_terminal'] == 0:
+        # A new track: if row before was not in terminal AND in the last 2 hours, for same MMSI, there has not been a
+        # vessel track in terminal
+        if row.Index != 0 and row.in_terminal == 1 and data.at[row.Index - 1, 'in_terminal'] == 0 and \
+                data.loc[(data.timestamp < row.timestamp) & (data.timestamp > row.timestamp -
+                                                             pd.Timedelta(2, unit='h'))].loc[
+                    data.mmsi == row.mmsi].in_terminal.sum() == 0:
             track_numbers_term += 1
             data.at[row.Index, 'track_number_term'] = track_numbers_term
-        elif row.Index != 0 and row.in_terminal == 1 and data.at[row.Index - 1, 'mmsi'] == row.mmsi:
+        elif row.Index != 0 and row.in_terminal == 1 and data.at[row.Index - 1, 'in_terminal'] == 1 and\
+                data.at[row.Index - 1, 'mmsi'] == row.mmsi:
             data.at[row.Index, 'track_number_term'] = data.at[row.Index - 1, 'track_number_term']
+        elif row.Index != 0 and row.in_terminal == 1 and data.at[row.Index - 1, 'in_terminal'] == 0:
+            data.at[row.Index, 'track_number_term'] = data.loc[(data.timestamp < row.timestamp) &
+                                                               (data.timestamp > row.timestamp -
+                                                                pd.Timedelta(2, unit='h'))].track_number_term.max()
 
         elif row.Index != 0 and row.in_anchorage == 1 and data.at[row.Index - 1, 'in_anchorage'] == 0:
             track_numbers_anch += 1
