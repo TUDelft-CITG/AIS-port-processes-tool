@@ -7,7 +7,7 @@ from shapely.geometry import Polygon
 from shapely.geometry import Point
 import gmplot
 
-
+#test
 def adjust_rhdhv_data(data):
     # Remove unnecessary columns
     data = data.copy()
@@ -229,7 +229,7 @@ if __name__ == '__main__':
     import time
 
     starttime = time.time()
-    df_raw = pd.read_csv('Raw_data_belfast.csv')
+    df_raw = pd.read_csv('Data-frames/Raw_data_belfast.csv')
 
     # Change column names
     df_1 = adjust_rhdhv_data(df_raw)

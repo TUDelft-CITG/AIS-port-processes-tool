@@ -137,7 +137,7 @@ def length_occupancy(data, total_length, operating_hours, visualise):
 # Test handle
 if __name__ == '__main__':
     # Load data frame with attached columns, sorted by port entry time
-    df = pd.read_csv('New_df_lb_lisbon.csv')
+    df = pd.read_csv('Data-frames/New_df_lb_lisbon.csv')
 
     """ ....... INPUTS ......... """
     # Number of berths:
