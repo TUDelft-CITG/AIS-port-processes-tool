@@ -28,26 +28,6 @@ def remove_little_messages_tot(data):
     return data
 
 
-""" Start after all cleaning and preprocessing steps have been performed  """
-# Container terminals
-data_processed_Rdam = pd.read_csv('Features_ct_rdam_euromax.csv')
-data_processed_APMRdam = pd.read_csv('Features_ct_rdam_apm.csv')
-data_processed_BEST = pd.read_csv('Features_ct_best.csv')
-data_processed_Lisbon = pd.read_csv('Features_ct_lisbon.csv')
-
-# Dry Bulk Terminals
-data_processed_RdamEMO = pd.read_csv('Features_db_rdam.csv')
-data_processed_Vliss = pd.read_csv('Features_db_vliss.csv')
-data_processed_LisDB = pd.read_csv('Features_db_lisbon.csv')
-data_processed_NHDB = pd.read_csv('Features_db_NH.csv')
-
-# Liquid Bulk Terminals
-data_processed_RdamLBT = pd.read_csv('Features_lb_rdam.csv')
-data_processed_Vliss_LBT = pd.read_csv('Features_lb_vliss.csv')
-data_processed_Lisbon_LBT = pd.read_csv('Features_lb_lisbon.csv')
-data_processed_belfast_LBT = pd.read_csv('Features_lb_belfast.csv')
-
-
 # Remove vessel tracks with no MMSI
 def drop_mmsi_zero(data):
     drop_list = list()
@@ -56,52 +36,6 @@ def drop_mmsi_zero(data):
             drop_list.append(row.Index)
     data = drop_and_report(data, drop_list, 'Remove unused rows')
     return data
-
-
-# Merge all data (Container Terminals)
-data_CT_1 = pd.concat([data_processed_Rdam, data_processed_APMRdam, data_processed_BEST, data_processed_Lisbon
-                       ], ignore_index=True)
-data_CT = drop_mmsi_zero(data_CT_1)
-
-# Merge all necessary data (Dry Bulk Terminals)
-data_DBT_1 = pd.concat([data_processed_RdamEMO, data_processed_Vliss, data_processed_LisDB
-                        , data_processed_NHDB
-                        ], ignore_index=True)
-data_DBT = drop_mmsi_zero(data_DBT_1)
-
-# Merge all necessary data (Liquid Bulk Terminals)
-data_LBT_1 = pd.concat([data_processed_RdamLBT, data_processed_Vliss_LBT, data_processed_Lisbon_LBT
-                       , data_processed_belfast_LBT ], ignore_index=True)
-data_LBT = drop_mmsi_zero(data_LBT_1)
-
-# Remove 'clear' not berthed vessel tracks
-remove_little_messages_tot(data_CT)
-remove_little_messages_tot(data_DBT)
-remove_little_messages_tot(data_LBT)
-
-feature_cols = ['avg_timestamp_interval', 'messages_tot', 'loa', 'mean_75_sog_per_track', 'DWT',
-                'message_frequency','distance_avg','mean_sog_per_track','std_sogms' ,'std_distance','time_in_polygon',
-                'teu_capacity',  'std_location']
-
-X_CT = data_CT[feature_cols]  # Features
-y_CT = data_CT.track_berthed  # Target variable
-
-X_DBT = data_DBT[feature_cols]  # Features
-y_DBT = data_DBT.track_berthed  # Target variable
-
-X_LBT = data_LBT[feature_cols]  # Features
-y_LBT = data_LBT.track_berthed  # Target variable
-
-# Merge terminal types
-X = pd.concat([X_CT, X_DBT, X_LBT], ignore_index=True)
-y = pd.concat([y_CT, y_DBT, y_LBT], ignore_index=True)
-
-# Fill all NaN by 0
-X_2 = X.fillna(0)
-
-
-# Split data set into training set and test set (80% training and 20% test)
-X_train, X_test, y_train, y_test = train_test_split(X_2, y, test_size=0.2, random_state=2)
 
 
 # Keep only vessel tracks that are wrongfully predicted
@@ -164,32 +98,74 @@ def keep_tp(data):
     return data
 
 
-# Define custom class to fix bug in xgboost 1.0.2
-class MyXGBClassifier(XGBClassifier):
-    @property
-    def coef_(self):
-        return None
-
-""" 7. XGBOOST """
-# Feature scaling: input variables to same range (dependent on type of model): not necessary
-# Fitting to training set
-from xgboost import XGBClassifier
-classifier = MyXGBClassifier(max_depth=4, random_state=0, learning_rate=0.2, n_estimators=100)
-classifier.fit(X_train, y_train)
-# Predicting test set results
-y_pred = classifier.predict(X_test)
-# Making the confusion Matrix
-from sklearn.metrics import confusion_matrix
-cm = confusion_matrix(y_test, y_pred)
-# Model Accuracy, how often is the classifier correct?
-from sklearn.model_selection import cross_val_score
-accuracies = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10)
-print('Mean of 10 accuracies is: ', accuracies.mean(), 'and std: ', accuracies.std())
-# print(accuracy_score(y_test, y_pred))
-
-
 # Test handle
 if __name__ == '__main__':
+    import pickle
+    """ Start after all cleaning and preprocessing steps have been performed  """
+    # Container terminals
+    data_processed_Rdam = pd.read_csv('Data-frames/Features_ct_rdam_euromax.csv')
+    data_processed_APMRdam = pd.read_csv('Data-frames/Features_ct_rdam_apm.csv')
+    data_processed_BEST = pd.read_csv('Data-frames/Features_ct_best.csv')
+    data_processed_Lisbon = pd.read_csv('Data-frames/Features_ct_lisbon.csv')
+
+    # Dry Bulk Terminals
+    data_processed_RdamEMO = pd.read_csv('Data-frames/Features_db_rdam.csv')
+    data_processed_Vliss = pd.read_csv('Data-frames/Features_db_vliss.csv')
+    data_processed_LisDB = pd.read_csv('Data-frames/Features_db_lisbon.csv')
+    data_processed_NHDB = pd.read_csv('Data-frames/Features_db_NH.csv')
+
+    # Liquid Bulk Terminals
+    data_processed_RdamLBT = pd.read_csv('Data-frames/Features_lb_rdam.csv')
+    data_processed_Vliss_LBT = pd.read_csv('Data-frames/Features_lb_vliss.csv')
+    data_processed_Lisbon_LBT = pd.read_csv('Data-frames/Features_lb_lisbon.csv')
+    data_processed_belfast_LBT = pd.read_csv('Data-frames/Features_lb_belfast.csv')
+
+    # Merge all data (Container Terminals)
+    data_CT_1 = pd.concat([data_processed_Rdam, data_processed_APMRdam, data_processed_BEST, data_processed_Lisbon
+                           ], ignore_index=True)
+    data_CT = drop_mmsi_zero(data_CT_1)
+
+    # Merge all necessary data (Dry Bulk Terminals)
+    data_DBT_1 = pd.concat([data_processed_RdamEMO, data_processed_Vliss, data_processed_LisDB
+                               , data_processed_NHDB
+                            ], ignore_index=True)
+    data_DBT = drop_mmsi_zero(data_DBT_1)
+
+    # Merge all necessary data (Liquid Bulk Terminals)
+    data_LBT_1 = pd.concat([data_processed_RdamLBT, data_processed_Vliss_LBT, data_processed_Lisbon_LBT
+                               , data_processed_belfast_LBT], ignore_index=True)
+    data_LBT = drop_mmsi_zero(data_LBT_1)
+
+    # Remove 'clear' not berthed vessel tracks
+    remove_little_messages_tot(data_CT)
+    remove_little_messages_tot(data_DBT)
+    remove_little_messages_tot(data_LBT)
+
+    feature_cols = ['avg_timestamp_interval', 'messages_tot', 'loa', 'mean_75_sog_per_track', 'DWT',
+                    'message_frequency', 'distance_avg', 'mean_sog_per_track', 'std_sogms', 'std_distance',
+                    'time_in_polygon',
+                    'teu_capacity', 'std_location']
+
+    X_CT = data_CT[feature_cols]  # Features
+    y_CT = data_CT.track_berthed  # Target variable
+
+    X_DBT = data_DBT[feature_cols]  # Features
+    y_DBT = data_DBT.track_berthed  # Target variable
+
+    X_LBT = data_LBT[feature_cols]  # Features
+    y_LBT = data_LBT.track_berthed  # Target variable
+
+    # Merge terminal types
+    X = pd.concat([X_CT, X_DBT, X_LBT], ignore_index=True)
+    y = pd.concat([y_CT, y_DBT, y_LBT], ignore_index=True)
+
+    # Fill all NaN by 0
+    X_2 = X.fillna(0)
+
+    # Split data set into training set and test set (80% training and 20% test)
+    X_train, X_test, y_train, y_test = train_test_split(X_2, y, test_size=0.2, random_state=2)
+
+
     # """ 5. Decision Tree """
     # # Feature scaling: input variables to same range (dependent on type of model): not necessary
     # # Fitting to training set
@@ -229,6 +205,12 @@ if __name__ == '__main__':
     accuracies = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10)
     print('Mean of 10 accuracies is: ', accuracies.mean(), 'and std: ', accuracies.std())
     # print(accuracy_score(y_test, y_pred))
+
+    """ Save trained model """
+    with open('classifier_pickle', 'wb') as f:
+        pickle.dump(classifier, f)
+
+
 
     # eval_set = [(X_train, y_train), (X_test, y_test)]
     # eval_metric = ["auc", "error"]

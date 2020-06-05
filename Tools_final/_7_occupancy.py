@@ -134,28 +134,21 @@ def length_occupancy(data, total_length, operating_hours, visualise):
     return data_time
 
 
-# Test handle
-if __name__ == '__main__':
-    # Load data frame with attached columns, sorted by port entry time
-    df = pd.read_csv('Data-frames/New_df_lb_lisbon.csv')
-
-    """ ....... INPUTS ......... """
-    # Number of berths:
-    number_of_berths = 2  # Input
-    # Operating hours per year:
-    operating_hours = 355 * 24  # Input
-    # Visualise berth occupancy over time (1 = yes)
-    visualise_berth_oc = 1  # Input
-    # Total length terminal [m]
-    length_term = 81 + 22  # Input
-    # Visualise length occupancy over time (1 = yes)
-    visualise_length_oc = 1  # Input
-
+# Run all occupancy steps:
+def run_all_occupancy(df, number_of_berths, operating_hours, visualise_berth_oc, length_term, visualise_length_oc):
     # If number of berths known: berth occupancy per terminal
-    df_berth_occupancy = berth_occupancy(df, number_of_berths, operating_hours, visualise_berth_oc)
+    if number_of_berths > 0:
+        df_berth_occupancy = berth_occupancy(df, number_of_berths, operating_hours, visualise_berth_oc)
+    else:
+        df_berth_occupancy = 0
+        print('The input for number of berths was not specified, thus the berth occupancy can not be defined')
 
     # If length of terminal can be fully occupied, determine length occupancy:
-    df_length_occupancy = length_occupancy(df, length_term, operating_hours, visualise_length_oc)
+    if length_term > 0:
+        df_length_occupancy = length_occupancy(df, length_term, operating_hours, visualise_length_oc)
+    else:
+        df_length_occupancy = 0
+        print('The length of terminal was not specified, thus the legnth occupancy can not be defined')
 
     # Determine factor: waiting time in terms of service time
     df['waiting/service_time[%]'] = df['waiting_time[hr]'] * 100 / df['service_time[hr]']
@@ -163,3 +156,30 @@ if __name__ == '__main__':
           np.round(df['waiting/service_time[%]'].mean(), 2),
           '%, and the average waiting time as a fraction of the average service time is',
           np.round(df['waiting_time[hr]'].mean() * 100 / df['service_time[hr]'].mean(), 2), '%')
+
+    return df_berth_occupancy, df_length_occupancy, df
+
+
+# Test handle
+if __name__ == '__main__':
+    # Load data frame with attached columns, sorted by port entry time
+    location = 'ct_BEST'
+    df = pd.read_csv('Data-frames/New_df_p_' + location + '.csv')
+
+    """ ....... INPUTS ......... """
+    # Number of berths: (1,2,3... number, or if unknown: 0)
+    number_of_berths = 0  # Input
+    # Operating hours per year:
+    operating_hours = 355 * 24  # Input
+    # Visualise berth occupancy over time (1 = yes)
+    visualise_berth_oc = 1  # Input
+    # Total length terminal [m] (if unknown: 0)
+    length_term = 1490  # Input
+    # Visualise length occupancy over time (1 = yes)
+    visualise_length_oc = 1  # Input
+
+    # Run all occupancy steps
+    df_berth_occupancy, df_length_occupancy, df_factor_occupancy = run_all_occupancy(df, number_of_berths,
+                                                                                     operating_hours,
+                                                                                     visualise_berth_oc, length_term,
+                                                                                     visualise_length_oc)

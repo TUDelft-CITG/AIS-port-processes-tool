@@ -103,20 +103,22 @@ def sort_by_terminal_entry_rel(df):
 # Test handle
 if __name__ == '__main__':
     # Load raw data
-    df = pd.read_csv('Data-frames/Final_df_lb_lisbon.csv')
+    location = 'ct_BEST'
+    df = pd.read_csv('Data-frames/Final_df_' + location + '.csv')
 
     # Add service and waiting times
     df = service_waiting_times(df)
 
     # Based on port entry arrival time, return inter arrival time
     df_p = sort_by_port_entry(df)
+    df_p.to_csv('Data-frames/New_df_p_' + location + '.csv', index=False)
 
     # Based on port entry arrival time, return all timestamps relative to t0
     df_p_rel = sort_by_port_entry_rel(df_p)
 
     # Based on terminal entry arrival, return inter arrival time
     df_t = sort_by_terminal_entry(df)
-    df_t.to_csv('New_df_lb_lisbon.csv', index=False)
+    df_t.to_csv('Data-frames/New_df_t_' + location + '.csv', index=False)
 
     # Based on terminal entry arrival, return inter arrival time, relative to t0
     df_t_rel = sort_by_terminal_entry_rel(df_t)
