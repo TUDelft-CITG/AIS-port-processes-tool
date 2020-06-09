@@ -73,28 +73,32 @@ def drop_and_report(data, drop_list, filter_name):
 
 """" Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
     example coordX = (lon, lat) """
-Coord1_term = (-5.880858, 54.631018)
-Coord2_term = (-5.882569, 54.629790)
-Coord3_term = (-5.881449, 54.629565)
-Coord4_term = (-5.880179, 54.630464)
+Coord1_term = (4.020561, 51.979217)
+Coord2_term = (4.046034, 51.973346)
+Coord3_term = (4.044223, 51.971183)
+Coord4_term = (4.019244, 51.976948)
+
 
 """" Input latitude and longitude locations of port polygon. """
-Coord1_port = (-5.9834, 54.5977)
-Coord2_port = (-5.5989, 54.5930)
-Coord3_port = (-5.5646, 54.7401)
-Coord4_port = (-5.9972, 54.7377)
+Coord1_port = (3.837200, 51.724568)
+Coord2_port = (4.2325, 51.9967)
+Coord3_port = (3.4722, 52.3689)
+Coord4_port = (3.1339, 51.8934)
+
 
 """" Input latitude and longitude locations of anchorage polygon 1. """
-Coord1_anch_1 = (-5.7390, 54.6741)
-Coord2_anch_1 = (-5.6236, 54.6789)
-Coord3_anch_1 = (-5.6085, 54.7194)
-Coord4_anch_1 = (-5.7417, 54.7154)
+Coord1_anch_1 = (3.4360, 52.1520)
+Coord2_anch_1 = (3.7326, 52.0457)
+Coord3_anch_1 = (3.8892, 52.1436)
+Coord4_anch_1 = (3.5678, 52.2497)
+
 
 """" Input latitude and longitude locations of anchorage polygon 2. """
 Coord1_anch_2 = (3.3289, 51.9189)
 Coord2_anch_2 = (3.8068, 52.0305)
 Coord3_anch_2 = (3.9056, 51.9019)
 Coord4_anch_2 = (3.4579, 51.8171)
+
 
 # Create the new polygon from the lat and lon list
 poly_term = Polygon([Coord1_term, Coord2_term, Coord3_term, Coord4_term])
@@ -241,16 +245,16 @@ if __name__ == '__main__':
     import time
 
     starttime = time.time()
-    df_raw = pd.read_csv('Data-frames/Raw_data_belfast.csv')
+    df_raw = pd.read_csv('Data-frames/Datasets_phase_2/Container_terminals/Rotterdam_Euromax/Raw_data_rdam_euromax_1.csv')
 
     # Change column names
     df_1 = adjust_rhdhv_data(df_raw)
 
     # Only keep certain types of vessels (Container Vessels, Dry Bulk Carriers, Tankers, None)
-    df_1_a = vessel_categories(df_1)
+    df_1_a = vessel_categories_CT(df_1)
 
     # Add if present in terminal or anchorage area (1 = yes, 0 = no)
-    df_2 = add_present_polygon(df_1_a)
+    df_2 = add_present_polygon_2(df_1_a, poly_term, poly_anch1, poly_anch2)
 
     # Label vessel tracks
     df_3 = label_vessel_tracks(df_2)
@@ -265,6 +269,8 @@ if __name__ == '__main__':
     df_anchorage.to_csv('Raw_data_lb_belfast_ANCHORAGE.csv')
 
     # Plot data in google maps
-    figure_google_maps(df_terminal[0:1000], df_anchorage[0:1000])
+    figure_google_maps_2(df_terminal[0:1000], df_anchorage[0:1000], lon_list_term, lat_list_term,
+                         lat_list_port, lon_list_port, lon_list_anch1, lat_list_anch1,
+                         lon_list_anch2, lat_list_anch2)
 
     print('Time for data_loading.py:', time.time() - starttime, 'seconds')
