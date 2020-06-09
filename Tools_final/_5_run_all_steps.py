@@ -183,16 +183,13 @@ def entry_exit_terminal(df_port):
 
 
 # Make new data frame with entry and exit times for port
-def new_data_frame(df_port):
+def new_data_frame(df_port, df_term_berthed_tracks):
     # Add for every port track number, if there is a terminal track number = new Data Frame
     port_tracks = df_port.port_track_number.unique()
     df_new = pd.DataFrame(columns=['term_track_number', 'port_track_number'])
     for i in port_tracks:
         data1 = (entry_exit_terminal(df_port.loc[df_port.port_track_number == i]))
         df_new = df_new.append(data1, ignore_index=True)
-
-    df_new['mmsi'] = df_port.mmsi[0]
-    df_new['loa'] = df_port.loa[0]
 
     df_new['port_entry_time'] = df_port.timestamp.min()
     df_new['port_exit_time'] = df_port.timestamp.max()
@@ -207,11 +204,6 @@ def new_data_frame(df_port):
                                row.term_track_number]).loc[df_port.in_terminal == 1]).index) == 0:
             # Delete this row: a port track that doesn't enter the terminal
             drop_list.append(row.Index)
-
-        # Add MMSI number
-        df_new.at[row.Index, 'mmsi'] = df_port.loc[df_port.port_track_number == row.port_track_number].mmsi.min()
-        # Add LOA
-        df_new.at[row.Index, 'loa'] = df_port.loc[df_port.port_track_number == row.port_track_number].loa.min()
 
     df_new = drop_and_report(df_new, drop_list, "Remove port tracks that don't enter the terminal polygon")
 
@@ -230,6 +222,14 @@ def new_data_frame(df_port):
             (df_port.loc[df_port.port_track_number == row.port_track_number]).loc[df_port.track_number_term ==
                                                                                   row.term_track_number].timestamp.max()
 
+    # Only keep tracks, where the terminal track is one that has actually berthed
+    df_new_merge = pd.merge(left=df_new, right=df_term_berthed_tracks, left_on='terminal_exit_time',
+                            right_on='timestamp', how='inner')
+    df_new = df_new_merge[
+        ['term_track_number', 'port_track_number', 'mmsi', 'loa', 'port_entry_time', 'port_exit_time',
+         'terminal_entry_time', 'terminal_exit_time', 'anchorage_entry_time', 'anchorage_exit_time']]
+
+    for row in df_new.itertuples():
         # Add entry and exit time for anchorage
         # Only add entry and exit time if the port track goes through the anchorage area
         if df_port.loc[df_port.port_track_number == row.port_track_number].in_anchorage.sum() > 0:
@@ -241,32 +241,37 @@ def new_data_frame(df_port):
                                                                     row.term_track_number !=
                                                                     df_new.at[row.Index + 1, 'term_track_number']):
                 # First entry = first entry for port track in anchorage area
-                df_new.at[row.Index, 'anchorage_entry_time'] = \
-                    df_port.loc[df_port.port_track_number == row.port_track_number].loc[df_port.in_anchorage
-                                                                                        == 1].timestamp.min()
-                # Last entry = last entry in anchorage before first entry current terminal
-                df_new.at[row.Index, 'anchorage_exit_time'] = \
-                    ((df_port.loc[df_port.port_track_number == row.port_track_number]
-                    ).loc[df_port['timestamp'] < df_new.at[row.Index, 'terminal_entry_time']]
-                    ).loc[df_port['in_anchorage'] == 1].timestamp.max()
+                # (check that this timestamp, is before current row entering terminal, otherwise = 0)
+                df_t0_anch = df_port.loc[df_port.port_track_number == row.port_track_number].loc[df_port.in_anchorage
+                                                                                                 == 1].timestamp.min()
+                if df_t0_anch < df_new.at[row.Index, 'terminal_entry_time']:
+                    df_new.at[row.Index, 'anchorage_entry_time'] = df_t0_anch
 
-            # If the port track has multiple terminal tracks:
-            else:
-                # First terminal track of port track
-                if row.Index == 0 or row.port_track_number != df_new.at[row.Index - 1, 'port_track_number']:
-                    # First entry = first entry of port track in anchorage area
-                    df_new.at[row.Index, 'anchorage_entry_time'] = \
-                        df_port.loc[df_port.port_track_number == row.port_track_number].loc[df_port.in_anchorage
-                                                                                            == 1].timestamp.min()
-                    # Last entry = last entry anchorage before first entry current terminal
+                    # Last entry = last entry in anchorage before first entry current terminal
                     df_new.at[row.Index, 'anchorage_exit_time'] = \
                         ((df_port.loc[df_port.port_track_number == row.port_track_number]
                         ).loc[df_port['timestamp'] < df_new.at[row.Index, 'terminal_entry_time']]
                         ).loc[df_port['in_anchorage'] == 1].timestamp.max()
 
+            # If the port track has multiple terminal tracks:
+            else:
+                # First terminal track of port track
+                if row.port_track_number != df_new.at[row.Index - 1, 'port_track_number']:
+                    # First entry = first entry of port track in anchorage area
+                    # (check that this timestamp, is before current row entering terminal, otherwise = 0)
+                    df_t0_anch = df_port.loc[df_port.port_track_number == row.port_track_number].loc[
+                        df_port.in_anchorage == 1].timestamp.min()
+                    if df_t0_anch < df_new.at[row.Index, 'terminal_entry_time']:
+                        df_new.at[row.Index, 'anchorage_entry_time'] = df_t0_anch
+
+                        # Last entry = last entry anchorage before first entry current terminal
+                        df_new.at[row.Index, 'anchorage_exit_time'] = \
+                            ((df_port.loc[df_port.port_track_number == row.port_track_number]
+                            ).loc[df_port['timestamp'] < df_new.at[row.Index, 'terminal_entry_time']]
+                            ).loc[df_port['in_anchorage'] == 1].timestamp.max()
+
                 # Last terminal track of port track
-                elif row.Index == (len(df_new) - 1) or \
-                        row.port_track_number != df_new.at[row.Index + 1, 'port_track_number']:
+                elif row.port_track_number != df_new.at[row.Index + 1, 'port_track_number']:
                     # First entry = first entry anchorage area after previous last entry terminal area
                     # (check that this timestamp, is before current row entering terminal, otherwise use previous)
                     first_entry_after_last_entry_terminal = \
@@ -333,7 +338,7 @@ def run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier):
     df_port_mmsi1['label_vessel_track'] = label_vessel_tracks_port(df_port_mmsi1)
 
     """ ............ RETURN NEW DATA FRAME WITH FIRST & LAST TIMESTAMPS ........ """
-    df_new = new_data_frame(df_port_mmsi1)
+    df_new = new_data_frame(df_port_mmsi1, df_term_final_per_track)
 
     return df_new
 
@@ -350,25 +355,25 @@ if __name__ == '__main__':
 
     # Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
     #    example coordX = (lon, lat)
-    Coord1_term = (2.143186, 41.305131)
-    Coord2_term = (2.153957, 41.315365)
-    Coord3_term = (2.156500, 41.314069)
-    Coord4_term = (2.145132, 41.303756)
+    Coord1_term = (4.020561, 51.979217)
+    Coord2_term = (4.046034, 51.973346)
+    Coord3_term = (4.044223, 51.971183)
+    Coord4_term = (4.019244, 51.976948)
 
     # Input latitude and longitude locations of port polygon.
-    Coord1_port = (2.1201, 41.3242)
-    Coord2_port = (2.1857, 41.2700)
-    Coord3_port = (2.2732, 41.3492)
-    Coord4_port = (2.1561, 41.3949)
+    Coord1_port = (3.837200, 51.724568)
+    Coord2_port = (4.2325, 51.9967)
+    Coord3_port = (3.4722, 52.3689)
+    Coord4_port = (3.1339, 51.8934)
 
     # Choose number of anchorage areas: one or two
     anchorage_areas = 'one'  # Input
 
     # Input latitude and longitude locations of anchorage polygon 1.
-    Coord1_anch_1 = (2.1658, 41.3165)
-    Coord2_anch_1 = (2.1905, 41.2834)
-    Coord3_anch_1 = (2.2365, 41.3154)
-    Coord4_anch_1 = (2.1905, 41.3464)
+    Coord1_anch_1 = (3.4360, 52.1520)
+    Coord2_anch_1 = (3.7326, 52.0457)
+    Coord3_anch_1 = (3.8892, 52.1436)
+    Coord4_anch_1 = (3.5678, 52.2497)
 
     # If a second polygon for waiting time is necessary:
     # Input latitude and longitude locations of anchorage polygon 2.
@@ -378,7 +383,7 @@ if __name__ == '__main__':
     Coord4_anch_2 = (3.4579, 51.8171)
 
     # Visualise polygons and data in google maps: 'yes' or 'no'
-    visualise = 'no'  # Input
+    visualise = 'yes'  # Input
 
     # Load classifier to predicted berthed vessels tracks
     with open('classifier_pickle', 'rb') as f:
