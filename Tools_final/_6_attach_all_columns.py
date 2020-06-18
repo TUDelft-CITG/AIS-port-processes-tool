@@ -1,5 +1,7 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
+import numpy as np
+from _1_data_gathering import drop_and_report
 
 
 # Add service and waiting times
@@ -14,8 +16,21 @@ def service_waiting_times(df):
     # Add service times
     df['service_time[hr]'] = (df.terminal_exit_time - df.terminal_entry_time).astype('timedelta64[s]') / 3600.
 
+    # Remove rows if service_time = 0
+    drop_list = list()
+    for row in df.itertuples():
+        if df.at[row.Index, 'service_time[hr]'] == 0:
+            drop_list.append(row.Index)
+    df = drop_and_report(df, drop_list, "Remove service times = 0")
+
     # Add waiting times
     df['waiting_time[hr]'] = (df.anchorage_exit_time - df.anchorage_entry_time).astype('timedelta64[s]') / 3600.
+
+    # Determine factor: waiting time in terms of service time
+    df['waiting/service_time[%]'] = df['waiting_time[hr]'] * 100 / df['service_time[hr]']
+
+    # Replace all NaN by zero
+    df = df.fillna(0)
 
     return df
 
@@ -60,53 +75,13 @@ def sort_by_port_entry_rel(df):
     return df_p
 
 
-# Add inter arrival time, based on sorting by time entering terminal
-def sort_by_terminal_entry(df):
-    """ Based on terminal time arrivals"""
-    df_p = df.copy()
-    df_p = df_p.drop(columns=['Unnamed: 0', 'term_track_number', 'port_track_number'])
-    df_p = df_p.sort_values(by=['terminal_entry_time'])
-    df_p = df_p.reset_index(drop=True)
-
-    # Add inter arrival time (based on port entries)
-    df_p['inter_arrival_time_term[hr]'] = 0
-    for row in df_p.itertuples():
-        if row.Index != 0:
-            df_p.at[row.Index, 'inter_arrival_time_term[hr]'] = (row.terminal_entry_time -
-                                                                 df_p.at[row.Index - 1, 'terminal_entry_time']
-                                                                 ).total_seconds() / 3600.
-    return df_p
-
-
-# Add inter arrival time, based on sorting by time entering terminal, relative to t0
-def sort_by_terminal_entry_rel(df):
-    """ Based on terminal time arrivals"""
-    df_p = df.copy()
-    # Normalise timestamps (first entry port = 0)
-    t0 = df_p.terminal_entry_time.min()
-
-    df_p.port_entry_time = (df_p.port_entry_time - t0).astype('timedelta64[s]') / 3600.
-    df_p.port_exit_time = (df_p.port_exit_time - t0).astype('timedelta64[s]') / 3600.
-    df_p.terminal_entry_time = (df_p.terminal_entry_time - t0).astype('timedelta64[s]') / 3600.
-    df_p.terminal_exit_time = (df_p.terminal_exit_time - t0).astype('timedelta64[s]') / 3600.
-    df_p.anchorage_entry_time = (df_p.anchorage_entry_time - t0).astype('timedelta64[s]') / 3600.
-    df_p.anchorage_exit_time = (df_p.anchorage_exit_time - t0).astype('timedelta64[s]') / 3600.
-
-    for row in df_p.itertuples():
-        if row.anchorage_exit_time < 0:
-            df_p.at[row.Index, 'anchorage_entry_time'] = 0
-            df_p.at[row.Index, 'anchorage_exit_time'] = 0
-
-    return df_p
-
-
 # Test handle
 if __name__ == '__main__':
     # Load raw data
     location = 'ct_BEST'
     df = pd.read_csv('Data-frames/Final_df_' + location + '.csv')
 
-    # Add service and waiting times
+    # Add service, waiting times and WT/ST ratio
     df = service_waiting_times(df)
 
     # Based on port entry arrival time, return inter arrival time
@@ -115,11 +90,4 @@ if __name__ == '__main__':
 
     # Based on port entry arrival time, return all timestamps relative to t0
     df_p_rel = sort_by_port_entry_rel(df_p)
-
-    # Based on terminal entry arrival, return inter arrival time
-    df_t = sort_by_terminal_entry(df)
-    df_t.to_csv('Data-frames/New_df_t_' + location + '.csv', index=False)
-
-    # Based on terminal entry arrival, return inter arrival time, relative to t0
-    df_t_rel = sort_by_terminal_entry_rel(df_t)
 

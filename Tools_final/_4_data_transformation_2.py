@@ -242,58 +242,38 @@ if __name__ == '__main__':
     # importances = pd.DataFrame({'feature':X_train.columns,'importance':np.round(classifier.feature_importances_,  3)})
     # importances = importances.sort_values('importance', ascending=False)
 
-    # # Visualisation for XGBoost
-    # import shap
-    # explainer = shap.TreeExplainer(classifier)
-    # shap_values = explainer.shap_values(X_train)
+    # #     Visualisation
+    for XGBoost
+# import shap
+# explainer = shap.TreeExplainer(classifier)
+# shap_values = explainer.shap_values(X_train)
+# #shap.summary_plot(shap_values, X_train, plot_type='bar')
+# shap.TreeExplainer(classifier).shap_interaction_values(X_train)
+# shap.summary_plot(shap_values, X_train)
+
+
+# Plot confusion matrix
+    # from mlxtend.plotting import plot_confusion_matrix
+    # import matplotlib.pyplot as plt
+    # import numpy as np
+    # fig, ax = plot_confusion_matrix(conf_mat=cm)
+    # plt.title('Confusion matrix')
+    # plt.show()
+
+    # # Print accuracies for berthing only
+    # import numpy as np
+    # cm_fl = cm.flatten()
+    # TN = cm_fl[0]
+    # FP = cm_fl[1]
+    # FN = cm_fl[2]
+    # TP = cm_fl[3]
+    # print('Total accuracy is', np.round((TN+TP)/(TN+TP+FP+FN),5)*100, '%')
+    # print('Percentage of correctly predicted berths (compared to total number of actual berths', np.round((TP)/(FN+TP),
+    #                                                                                                       5)*100, '%')
+    # print('False number berths compared to total berths', np.round(FP/(FN+TP)*100,5))
     #
-    # #shap.summary_plot(shap_values, X_train, plot_type='bar')
-    # shap.TreeExplainer(classifier).shap_interaction_values(X_train)
-    # shap.summary_plot(shap_values, X_train)
-    # # shap.dependence_plot('message_frequency', shap_values, X_train)
-
-    # feat_imp = pd.Series(classifier.feature_importances_, feature_cols).sort_values(ascending=False)
-    # feat_imp.plot(kind='bar', title='Feature Importance')
-    # plt.ylabel('Feature importance score')
-
-    # thresholds = sort(classifier.feature_importances_)
-    #
-    # for thresh in thresholds:
-    #     # select features using threshold
-    #     selection = SelectFromModel(classifier, threshold=thresh, prefit=True)
-    #     select_X_train = selection.transform(X_train)
-    #     # train model
-    #     selection_model = XGBClassifier()
-    #     selection_model.fit(select_X_train, y_train)
-    #     # eval model
-    #     select_X_test = selection.transform(X_test)
-    #     y_pred = selection_model.predict(select_X_test)
-    #     predictions = [round(value) for value in y_pred]
-    #     accuracy = accuracy_score(y_test, predictions)
-    #     print("Thresh=%.3f, n=%d, Accuracy: %.2f%%" % (thresh, select_X_train.shape[1], accuracy * 100.0))
-
-    # Plot confusion matrix
-    from mlxtend.plotting import plot_confusion_matrix
-    import matplotlib.pyplot as plt
-    import numpy as np
-    fig, ax = plot_confusion_matrix(conf_mat=cm)
-    plt.title('Confusion matrix')
-    plt.show()
-
-    # Print accuracies for berthing only
-    import numpy as np
-    cm_fl = cm.flatten()
-    TN = cm_fl[0]
-    FP = cm_fl[1]
-    FN = cm_fl[2]
-    TP = cm_fl[3]
-    print('Total accuracy is', np.round((TN+TP)/(TN+TP+FP+FN),5)*100, '%')
-    print('Percentage of correctly predicted berths (compared to total number of actual berths', np.round((TP)/(FN+TP),
-                                                                                                          5)*100, '%')
-    print('False number berths compared to total berths', np.round(FP/(FN+TP)*100,5))
-
-    """ Inspect wrongful predictions """
-    #
+    # """ Inspect wrongful predictions """
+    # #
     # # Merge terminal types
     # X_all = pd.concat([data_CT, data_DBT, data_LBT], ignore_index=True)
     # # Fill all NaN by 0
