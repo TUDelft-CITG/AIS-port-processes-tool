@@ -383,7 +383,7 @@ if __name__ == '__main__':
     Coord4_anch_2 = (3.4579, 51.8171)
 
     # Visualise polygons and data in google maps: 'yes' or 'no'
-    visualise = 'yes'  # Input
+    visualise = 'no'  # Input
 
     # Load classifier to predicted berthed vessels tracks
     with open('classifier_pickle', 'rb') as f:

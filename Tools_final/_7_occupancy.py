@@ -120,6 +120,15 @@ def length_occupancy(data, total_length, operating_hours, visualise):
                                                                                          ' length occupancy is',
           np.round(average_occupancy_op_hours, 2), '%')
 
+    # Normalized length occupancy (to adjust for length between ships)
+    df_occupancy['normalized_length_occupancy[%]'] = (df_occupancy['occupancy_length[%]']*1.1)+15
+    # Normalized average length occupancy
+    norm_avg_length_occup = (df_occupancy['normalized_length_occupancy[%]'].mean())
+    norm_avg_length_occup_op_hours = norm_avg_length_occup * (365 * 24.) / operating_hours
+    print('The normalized average length occupancy of the terminal is', np.round(norm_avg_length_occup, 2),
+          '%, relative to the total operating time the average length occupancy is',
+          np.round(norm_avg_length_occup_op_hours, 2), '%')
+
     if visualise > 0:
         plt.figure()
         plt.xlabel('Time [per hour]')
@@ -131,7 +140,7 @@ def length_occupancy(data, total_length, operating_hours, visualise):
         plt.legend(title='Length available [m]')
         plt.show()
 
-    return data_time
+    return df_occupancy
 
 
 # Run all occupancy steps:
@@ -150,13 +159,6 @@ def run_all_occupancy(df, number_of_berths, operating_hours, visualise_berth_oc,
         df_length_occupancy = 0
         print('The length of terminal was not specified, thus the legnth occupancy can not be defined')
 
-    # Determine factor: waiting time in terms of service time
-    df['waiting/service_time[%]'] = df['waiting_time[hr]'] * 100 / df['service_time[hr]']
-    print('The average of all factors (waiting times/service times) is',
-          np.round(df['waiting/service_time[%]'].mean(), 2),
-          '%, and the average waiting time as a fraction of the average service time is',
-          np.round(df['waiting_time[hr]'].mean() * 100 / df['service_time[hr]'].mean(), 2), '%')
-
     return df_berth_occupancy, df_length_occupancy, df
 
 
@@ -172,14 +174,13 @@ if __name__ == '__main__':
     # Operating hours per year:
     operating_hours = 355 * 24  # Input
     # Visualise berth occupancy over time (1 = yes)
-    visualise_berth_oc = 1  # Input
+    visualise_berth_oc = 0  # Input
     # Total length terminal [m] (if unknown: 0)
-    length_term = 1490  # Input
+    length_term = 1400  # Input
     # Visualise length occupancy over time (1 = yes)
     visualise_length_oc = 1  # Input
 
     # Run all occupancy steps
-    df_berth_occupancy, df_length_occupancy, df_factor_occupancy = run_all_occupancy(df, number_of_berths,
-                                                                                     operating_hours,
-                                                                                     visualise_berth_oc, length_term,
-                                                                                     visualise_length_oc)
+    df_berth_occupancy, df_length_occupancy, df_all = run_all_occupancy(df, number_of_berths,
+                                                                        operating_hours, visualise_berth_oc,
+                                                                        length_term, visualise_length_oc)
