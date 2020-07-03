@@ -1,3 +1,10 @@
+""" Step 4-2. Data transformation: predicting vessel tracks berthed (yes or no)
+ Input: Terminal data frame with every vessel track attached with 10 different features
+ Actions: Training multiple machine learning algorithms (final: XGBoost) in order to predict whether or not a vessel
+ track has berthed at the terminal or not
+ Output: Classifier (machine learning algorithm, best performed: XGBoost)
+ """
+
 import treeplot
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -103,22 +110,22 @@ if __name__ == '__main__':
     import pickle
     """ Start after all cleaning and preprocessing steps have been performed  """
     # Container terminals
-    data_processed_Rdam = pd.read_csv('Data-frames/Features_ct_rdam_euromax.csv')
-    data_processed_APMRdam = pd.read_csv('Data-frames/Features_ct_rdam_apm.csv')
-    data_processed_BEST = pd.read_csv('Data-frames/Features_ct_best.csv')
-    data_processed_Lisbon = pd.read_csv('Data-frames/Features_ct_lisbon.csv')
+    data_processed_Rdam = pd.read_csv('Data-frames/Old_results_during_phase2/Features_ct_rdam_euromax.csv')
+    data_processed_APMRdam = pd.read_csv('Data-frames/Old_results_during_phase2/Features_ct_rdam_apm.csv')
+    data_processed_BEST = pd.read_csv('Data-frames/Old_results_during_phase2/Features_ct_best.csv')
+    data_processed_Lisbon = pd.read_csv('Data-frames/Old_results_during_phase2/Features_ct_lisbon.csv')
 
     # Dry Bulk Terminals
-    data_processed_RdamEMO = pd.read_csv('Data-frames/Features_db_rdam.csv')
-    data_processed_Vliss = pd.read_csv('Data-frames/Features_db_vliss.csv')
-    data_processed_LisDB = pd.read_csv('Data-frames/Features_db_lisbon.csv')
-    data_processed_NHDB = pd.read_csv('Data-frames/Features_db_NH.csv')
+    data_processed_RdamEMO = pd.read_csv('Data-frames/Old_results_during_phase2/Features_db_rdam.csv')
+    data_processed_Vliss = pd.read_csv('Data-frames/Old_results_during_phase2/Features_db_vliss.csv')
+    data_processed_LisDB = pd.read_csv('Data-frames/Old_results_during_phase2/Features_db_lisbon.csv')
+    data_processed_NHDB = pd.read_csv('Data-frames/Old_results_during_phase2/Features_db_NH.csv')
 
     # Liquid Bulk Terminals
-    data_processed_RdamLBT = pd.read_csv('Data-frames/Features_lb_rdam.csv')
-    data_processed_Vliss_LBT = pd.read_csv('Data-frames/Features_lb_vliss.csv')
-    data_processed_Lisbon_LBT = pd.read_csv('Data-frames/Features_lb_lisbon.csv')
-    data_processed_belfast_LBT = pd.read_csv('Data-frames/Features_lb_belfast.csv')
+    data_processed_RdamLBT = pd.read_csv('Data-frames/Old_results_during_phase2/Features_lb_rdam.csv')
+    data_processed_Vliss_LBT = pd.read_csv('Data-frames/Old_results_during_phase2/Features_lb_vliss.csv')
+    data_processed_Lisbon_LBT = pd.read_csv('Data-frames/Old_results_during_phase2/Features_lb_lisbon.csv')
+    data_processed_belfast_LBT = pd.read_csv('Data-frames/Old_results_during_phase2/Features_lb_belfast.csv')
 
     # Merge all data (Container Terminals)
     data_CT_1 = pd.concat([data_processed_Rdam, data_processed_APMRdam, data_processed_BEST, data_processed_Lisbon
@@ -243,7 +250,7 @@ if __name__ == '__main__':
     # importances = importances.sort_values('importance', ascending=False)
 
     # #     Visualisation
-    for XGBoost
+#    for XGBoost
 # import shap
 # explainer = shap.TreeExplainer(classifier)
 # shap_values = explainer.shap_values(X_train)

@@ -1,3 +1,9 @@
+""" Step 2. Data cleaning
+ Input: Terminal data frame with vessel track labels
+ Actions: Cleaning steps (rounding parameters, removing duplicates, deleting false inputs, location outlier check)
+ Output: Cleaned terminal data frame
+ """
+
 import pandas as pd
 import geopy.distance
 from _1_data_gathering import drop_and_report

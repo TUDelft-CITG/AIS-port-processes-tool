@@ -1,3 +1,9 @@
+""" Step 4-1. Data transformation: adding features, preparing data
+ Input: Cleaned terminal data frame with sog
+ Actions: Adding new vessel track labelling, adding 10 features for every vessel track
+ Output: New terminal data frame, every vessel track attached with 10 different features
+ """
+
 import pandas as pd
 import geopy.distance
 import numpy as np
@@ -6,8 +12,6 @@ from _2_data_cleaning import drop_and_report
 
 
 # Features: only used for TERMINAL polygon
-
-
 # Label vessel tracks again (some vessel tracks removed in data cleaning steps)
 def number_set_mmsi(data):
     track_numbers = 0
@@ -413,9 +417,9 @@ if __name__ == '__main__':
 # Dry bulk
 
     # Cleaned/ preprocessed dataset with column: in small_terminal
-    data_AIS4 = pd.read_csv('Data-frames/Processed_data_db_lisbon_TERMINAL.csv')
+    data_AIS4 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_db_lisbon_TERMINAL.csv')
     data_AIS_04 = data_AIS4.copy()
-    seaweb4 = pd.read_csv('Data-frames/Seaweb-dataset-LisbonDB.csv')
+    seaweb4 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-LisbonDB.csv')
 
     # Apply processing steps
     data_processed4 = processing_for_ML(data_AIS_04, seaweb4)
@@ -423,20 +427,20 @@ if __name__ == '__main__':
     # Export processed dataframes
     data_processed4.to_csv('Features_db_lisbon.csv')
 
-    data_AIS05 = pd.read_csv('Data-frames/Processed_data_db_NH_TERMINAL.csv')
-    seaweb05 = pd.read_csv('Data-frames/Seaweb-dataset-NH-DB.csv')
+    data_AIS05 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_db_NH_TERMINAL.csv')
+    seaweb05 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-NH-DB.csv')
     # Apply processing steps
     data_processed5 = processing_for_ML(data_AIS05, seaweb05)
     # Export processed dataframes
     data_processed5.to_csv('Features_db_NH.csv')
 
-    data_AIS_16 = pd.read_csv('Data-frames/Processed_data_db_rdam_TERMINAL.csv')
-    data_seaweb_Rdam_EMO1 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB1.csv')
-    data_seaweb_Rdam_EMO2 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB2.csv')
-    data_seaweb_Rdam_EMO3 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB3.csv')
-    data_seaweb_Rdam_EMO4 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB4.csv')
-    data_seaweb_Rdam_EMO5 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB5.csv')
-    data_seaweb_Rdam_EMO6 = pd.read_csv('Data-frames/Seaweb-dataset-Rotterdam_EMO_DB6.csv')
+    data_AIS_16 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_db_rdam_TERMINAL.csv')
+    data_seaweb_Rdam_EMO1 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB1.csv')
+    data_seaweb_Rdam_EMO2 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB2.csv')
+    data_seaweb_Rdam_EMO3 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB3.csv')
+    data_seaweb_Rdam_EMO4 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB4.csv')
+    data_seaweb_Rdam_EMO5 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB5.csv')
+    data_seaweb_Rdam_EMO6 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rotterdam_EMO_DB6.csv')
     data_seaweb_Rdam_EMO = pd.concat([data_seaweb_Rdam_EMO1, data_seaweb_Rdam_EMO2, data_seaweb_Rdam_EMO3,
                                       data_seaweb_Rdam_EMO4, data_seaweb_Rdam_EMO5, data_seaweb_Rdam_EMO6],
                                      ignore_index=True)
@@ -446,8 +450,8 @@ if __name__ == '__main__':
     # Export processed dataframes
     data_processed6.to_csv('Features_db_rdam.csv')
 
-    data_AIS27 = pd.read_csv('Data-frames/Processed_data_db_vliss_TERMINAL.csv')
-    seaweb27 = pd.read_csv('Data-frames/Seaweb-dataset-VlissingenDB.csv')
+    data_AIS27 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_db_vliss_TERMINAL.csv')
+    seaweb27 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-VlissingenDB.csv')
     # Apply processing steps
     data_processed7 = processing_for_ML(data_AIS27, seaweb27)
     # Export processed dataframes
@@ -456,9 +460,9 @@ if __name__ == '__main__':
 # Liquid bulk
 
     # Cleaned/ preprocessed dataset with column: in small_terminal
-    data_AIS41 = pd.read_csv('Data-frames/Processed_data_lb_belfast_TERMINAL.csv')
+    data_AIS41 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_lb_belfast_TERMINAL.csv')
     data_AIS_041 = data_AIS41.copy()
-    seaweb41 = pd.read_csv('Data-frames/Seaweb-dataset-belfast.csv')
+    seaweb41 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-belfast.csv')
 
     # Apply processing steps
     data_processed41 = processing_for_ML(data_AIS_041, seaweb41)
@@ -466,24 +470,24 @@ if __name__ == '__main__':
     # Export processed dataframes
     data_processed41.to_csv('Features_lb_belfast.csv')
 
-    data_AIS051 = pd.read_csv('Data-frames/Processed_data_lb_lisbon_TERMINAL.csv')
-    seaweb051 = pd.read_csv('Data-frames/Seaweb-dataset-Lisbon-LBT.csv')
+    data_AIS051 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_lb_lisbon_TERMINAL.csv')
+    seaweb051 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Lisbon-LBT.csv')
     # Apply processing steps
     data_processed51 = processing_for_ML(data_AIS051, seaweb051)
     # Export processed dataframes
     data_processed51.to_csv('Features_lb_lisbon.csv')
 
-    data_AIS_161 = pd.read_csv('Data-frames/Processed_data_lb_rdam_TERMINAL.csv')
-    data_seaweb_Rdam_lb1 = pd.read_csv('Data-frames/Seaweb-dataset-Rdam-LBT_b2.csv')
-    data_seaweb_Rdam_lb2 = pd.read_csv('Data-frames/Seaweb-dataset-Rdam-LBT_b1.csv')
+    data_AIS_161 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_lb_rdam_TERMINAL.csv')
+    data_seaweb_Rdam_lb1 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rdam-LBT_b2.csv')
+    data_seaweb_Rdam_lb2 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Rdam-LBT_b1.csv')
     seaweb161 = pd.concat([data_seaweb_Rdam_lb1, data_seaweb_Rdam_lb2], ignore_index=True)
     # Apply processing steps
     data_processed61 = processing_for_ML(data_AIS_161, seaweb161)
     # Export processed dataframes
     data_processed61.to_csv('Features_lb_rdam.csv')
 
-    data_AIS271 = pd.read_csv('Data-frames/Processed_data_lb_vliss_TERMINAL.csv')
-    seaweb271 = pd.read_csv('Data-frames/Seaweb-dataset-Vliss-LBT.csv')
+    data_AIS271 = pd.read_csv('Data-frames/Old_results_during_phase2/Processed_data_lb_vliss_TERMINAL.csv')
+    seaweb271 = pd.read_csv('Data-frames/Old_results_during_phase2/Seaweb-dataset-Vliss-LBT.csv')
     # Apply processing steps
     data_processed71 = processing_for_ML(data_AIS271, seaweb271)
     # Export processed dataframes
