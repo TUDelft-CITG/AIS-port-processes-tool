@@ -1,3 +1,12 @@
+""" Step 5. Run all steps 1,2,3,4-1,4-2
+ Input: Raw data file from RHDHV AIS data base [csv file], coordinates for terminal/port/anchorage area's, trained
+ classifier
+ Actions: Perform all steps as in steps 1: data gathering, 2: data cleaning (for terminal and simple cleaning for port),
+ 3: add sog, 4: remove all vessel tracks that did not berth at the terminal (based on trained XGBoost classifier),
+ create new data frame with entry and exit timestamps
+ Output: New data frame with entry and exit timestamps for the port area, anchorage area, terminal area
+ """
+
 import pandas as pd
 import numpy as np
 from shapely.geometry import Polygon
@@ -226,8 +235,8 @@ def new_data_frame(df_port, df_term_berthed_tracks):
     df_new_merge = pd.merge(left=df_new, right=df_term_berthed_tracks, left_on='terminal_exit_time',
                             right_on='timestamp', how='inner')
     df_new = df_new_merge[
-        ['term_track_number', 'port_track_number', 'mmsi', 'loa', 'port_entry_time', 'port_exit_time',
-         'terminal_entry_time', 'terminal_exit_time', 'anchorage_entry_time', 'anchorage_exit_time']]
+        ['term_track_number', 'port_track_number', 'mmsi', 'loa', 'DWT', 'teu_capacity', 'port_entry_time',
+         'port_exit_time', 'terminal_entry_time', 'terminal_exit_time', 'anchorage_entry_time', 'anchorage_exit_time']]
 
     for row in df_new.itertuples():
         # Add entry and exit time for anchorage
@@ -345,45 +354,48 @@ def run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier):
 
 # Test handle
 if __name__ == '__main__':
+    import time
+    starttime = time.time()
+
     # Load raw data
-    df = pd.read_csv('Data-frames/Datasets_phase_2/Container_terminals/Barcelona/Raw_data_best.csv')
-    location = 'ct_BEST'
+    location = 'lb_rdam_shell'
+    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Raw_data_port.csv')
 
     """ For every new location, necessary inputs """
     # Choose vessel category based on terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
-    terminal_type = 'container'  # Input
+    terminal_type = 'liquid_bulk'  # Input
 
     # Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
     #    example coordX = (lon, lat)
-    Coord1_term = (4.020561, 51.979217)
-    Coord2_term = (4.046034, 51.973346)
-    Coord3_term = (4.044223, 51.971183)
-    Coord4_term = (4.019244, 51.976948)
+    Coord1_term = (4.129769, 51.951270)
+    Coord2_term = (4.142794, 51.952341)
+    Coord3_term = (4.143867, 51.955396)
+    Coord4_term = (4.129061, 51.955383)
 
     # Input latitude and longitude locations of port polygon.
-    Coord1_port = (3.837200, 51.724568)
-    Coord2_port = (4.2325, 51.9967)
-    Coord3_port = (3.4722, 52.3689)
-    Coord4_port = (3.1339, 51.8934)
+    Coord1_port = (3.5870, 52.2648)
+    Coord2_port = (4.329426, 52.018584)
+    Coord3_port = (3.965808, 51.664617)
+    Coord4_port = (2.7823, 52.0119)
 
     # Choose number of anchorage areas: one or two
-    anchorage_areas = 'one'  # Input
+    anchorage_areas = 'two'  # Input
 
     # Input latitude and longitude locations of anchorage polygon 1.
-    Coord1_anch_1 = (3.4360, 52.1520)
-    Coord2_anch_1 = (3.7326, 52.0457)
-    Coord3_anch_1 = (3.8892, 52.1436)
-    Coord4_anch_1 = (3.5678, 52.2497)
+    Coord1_anch_1 = (3.5294, 52.2513)
+    Coord2_anch_1 = (3.8177, 52.1874)
+    Coord3_anch_1 = (3.7573, 52.0846)
+    Coord4_anch_1 = (3.4991, 52.1588)
 
     # If a second polygon for waiting time is necessary:
     # Input latitude and longitude locations of anchorage polygon 2.
-    Coord1_anch_2 = (3.3289, 51.9189)
-    Coord2_anch_2 = (3.8068, 52.0305)
-    Coord3_anch_2 = (3.9056, 51.9019)
-    Coord4_anch_2 = (3.4579, 51.8171)
+    Coord1_anch_2 = (3.9056, 51.9443)
+    Coord2_anch_2 = (3.2520, 52.1773)
+    Coord3_anch_2 = (3.0487, 51.9460)
+    Coord4_anch_2 = (3.4387, 51.8477)
 
     # Visualise polygons and data in google maps: 'yes' or 'no'
-    visualise = 'no'  # Input
+    visualise = 'yes'  # Input
 
     # Load classifier to predicted berthed vessels tracks
     with open('classifier_pickle', 'rb') as f:
@@ -392,8 +404,9 @@ if __name__ == '__main__':
     df_new = run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier)
 
     # Export data set
-    df_new.to_csv('Data-frames/Final_df_' + location + '.csv')
+    df_new.to_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
 
+    print('Time for 5.run_all_steps:', (time.time() - starttime)/60, 'minutes')
 
 
 

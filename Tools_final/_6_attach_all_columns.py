@@ -1,7 +1,25 @@
+""" Step 6. Attach all (study parameter) columns
+ Input: New data frame with entry and exit timestamps for the port area, anchorage area, terminal area
+ Actions: Attach waiting times, service times, waiting times/service time ratio, sort by port entry, inter arrival
+ times, sort by port entry (relative to  first moment in time)
+ Output: Data frame with columns with waiting-, service- and inter arrival times
+ """
+
 import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
 from _1_data_gathering import drop_and_report
+
+
+# Remove all vessel tracks with time in polygon < 30 min:
+def remove_little_messages_tot_second(data):
+    drop_list = list()
+    for row in data.itertuples():
+        if data.at[row.Index, 'service_time[hr]'] < 0.5:
+            drop_list.append(row.Index)
+            continue
+    data = drop_and_report(data, drop_list, 'Remove obvious non-berthing tracks (from new data frame)')
+    return data
 
 
 # Add service and waiting times
@@ -16,12 +34,8 @@ def service_waiting_times(df):
     # Add service times
     df['service_time[hr]'] = (df.terminal_exit_time - df.terminal_entry_time).astype('timedelta64[s]') / 3600.
 
-    # Remove rows if service_time = 0
-    drop_list = list()
-    for row in df.itertuples():
-        if df.at[row.Index, 'service_time[hr]'] == 0:
-            drop_list.append(row.Index)
-    df = drop_and_report(df, drop_list, "Remove service times = 0")
+    # Remove obvious non - berthing tracks that re-entered in new data frame (service time < 30 min)
+    df = remove_little_messages_tot_second(df)
 
     # Add waiting times
     df['waiting_time[hr]'] = (df.anchorage_exit_time - df.anchorage_entry_time).astype('timedelta64[s]') / 3600.
@@ -78,15 +92,15 @@ def sort_by_port_entry_rel(df):
 # Test handle
 if __name__ == '__main__':
     # Load raw data
-    location = 'ct_BEST'
-    df = pd.read_csv('Data-frames/Final_df_' + location + '.csv')
+    location = 'ct_rdam_euromax'
+    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
 
     # Add service, waiting times and WT/ST ratio
     df = service_waiting_times(df)
 
     # Based on port entry arrival time, return inter arrival time
     df_p = sort_by_port_entry(df)
-    df_p.to_csv('Data-frames/New_df_p_' + location + '.csv', index=False)
+    df_p.to_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
 
     # Based on port entry arrival time, return all timestamps relative to t0
     df_p_rel = sort_by_port_entry_rel(df_p)

@@ -1,3 +1,9 @@
+""" Step 3. Data enrichment
+ Input: Cleaned terminal data frame
+ Actions: Adding sog and speed outlier check
+ Output: Cleaned terminal data frame with sog
+ """
+
 import pandas as pd
 import geopy.distance
 import math

@@ -1,3 +1,10 @@
+""" Step 1. Data gathering
+ Input: Raw data file from RHDHV AIS data base [csv file], coordinates for terminal/port/anchorage area's
+ Actions: Sort data, adjust column names, extract certain categories,  extracting data in terminal polygon,
+ vessel track labelling for terminal
+ Output: visualisation of polygons with data using google maps, terminal data frame with vessel track labels
+ """
+
 # Loading the data
 # For now: load data set from RHDHV AIS website (AWS server) [csv file]
 
