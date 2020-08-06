@@ -268,7 +268,7 @@ def st_distributions(df, location):
     # Obtain the KS test P statistic
     p.append(np.around(scipy.stats.kstest(data, scipy.stats.norm.cdf, args=scipy.stats.norm.fit(data))[1], 5))
     # Chi-squared test
-    cdf = scipy.stats.norm.cdf(bin_edges, loc_norm, scale_norm )
+    cdf = scipy.stats.norm.cdf(bin_edges, loc_norm, scale_norm)
     expected_values = n * np.diff(cdf)
     chi.append((scipy.stats.chisquare(observed_values, expected_values))[0])
 

@@ -64,41 +64,54 @@ def year_month(df):
 def plot_vessel_arrivals_class(df, title_name):
     df['year_month'] = pd.to_datetime(df.year_month, format='%Y-%m')
 
-    # Plot vessel arrivals per vessel class
-    fig, ax = plt.subplots(figsize=(15, 7))
-    df.groupby(['vessel_class']).count()['terminal_entry_time'].plot.bar(ax=ax)
-    plt.xticks(rotation=0)
-    plt.title('Vessel arrivals per vessel class: ' + title_name)
-    plt.xlabel('Vessel Class')
-    plt.ylabel('Number of vessel arrivals')
-    plt.show()
+    # # Plot vessel arrivals per vessel class
+    # fig, ax = plt.subplots(figsize=(15, 7))
+    # df.groupby(['vessel_class']).count()['terminal_entry_time'].plot.bar(ax=ax)
+    # plt.xticks(rotation=0)
+    # plt.title('Vessel arrivals per vessel class: ' + title_name)
+    # plt.xlabel('Vessel Class')
+    # plt.ylabel('Number of vessel arrivals')
+    # plt.show()
 
     # Plot vessel arrivals per month
-    fig, ax = plt.subplots(figsize=(15,7))
+    fig, ax = plt.subplots(figsize=(15, 7))
     df.groupby(['year_month']).count()['terminal_entry_time'].plot.bar(ax=ax)
-    plt.xticks(rotation=70)
+    plt.xticks(rotation=00)
     plt.title('Vessel arrivals per month: ' + title_name)
     plt.xlabel('Month')
+    positions = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    labels = ("5-2019", "6-2019", "7-2019", '8-2019', '9-2019', '10-2019', '11-2019', '12-2019', '1-2020', '2-2020',
+              '3-2020', '4-2020')
+    plt.xticks(positions, labels)
     plt.ylabel('Number of vessel arrivals')
     plt.show()
 
-    # Plot vessel arrivals over time per class (bar chart)
-    fig, ax = plt.subplots(figsize=(15, 7))
-    df.groupby(['year_month', 'vessel_class']).count()['terminal_entry_time'].unstack().plot.bar(ax=ax)
-    plt.title('Vessel arrivals per month per vessel class: ' + title_name)
-    plt.xlabel('Month')
-    plt.ylabel('Number of vessel arrivals')
-    plt.xticks(rotation=70)
-    # ax.xaxis.set_major_formatter(DateFormatter("%Y-%m"))
-    plt.show()
+    # # Plot vessel arrivals over time per class (bar chart)
+    # fig, ax = plt.subplots(figsize=(15, 7))
+    # df.groupby(['year_month', 'vessel_class']).count()['terminal_entry_time'].unstack().plot.bar(ax=ax)
+    # handles, _ = ax.get_legend_handles_labels()
+    # ax.legend(handles, ["1: Small Feeder", "2: Regional Feeder", '3: Feedermax', '4: Panamax', '5: New Panamax',
+    #                     '6: Post New Panamax'], title='Vessel Class')
+    # plt.title('Vessel arrivals per month per vessel class: ' + title_name)
+    # plt.xticks(rotation=0)
+    # plt.xlabel('Month')
+    # plt.ylabel('Number of vessel arrivals')
+    # positions = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    # labels = ("5-2019", "6-2019", "7-2019", '8-2019', '9-2019', '10-2019', '11-2019', '12-2019', '1-2020', '2-2020',
+    #           '3-2020', '4-2020')
+    # plt.xticks(positions, labels)
+    # plt.show()
 
-    # Plot vessel arrivals over time per class (line graph)
-    fig, ax = plt.subplots(figsize=(15, 7))
-    df.groupby(['year_month', 'vessel_class']).count()['terminal_entry_time'].unstack().plot(ax=ax)
-    plt.title('Vessel arrivals per month per vessel class: ' + title_name)
-    plt.xlabel('Month')
-    plt.ylabel('Number of vessel arrivals')
-    plt.show()
+    # # Plot vessel arrivals over time per class (line graph)
+    # fig, ax = plt.subplots(figsize=(15, 7))
+    # df.groupby(['year_month', 'vessel_class']).count()['terminal_entry_time'].unstack().plot(ax=ax)
+    # handles, _ = ax.get_legend_handles_labels()
+    # ax.legend(handles, ["1: Small Feeder", "2: Regional Feeder", '3: Feedermax', '4: Panamax', '5: New Panamax',
+    #                     '6: Post New Panamax'], title='Vessel Class')
+    # plt.title('Vessel arrivals per month per vessel class: ' + title_name)
+    # plt.xlabel('Month')
+    # plt.ylabel('Number of vessel arrivals')
+    # plt.show()
 
 
 # Plot vessel arrivals (using vessel length)
@@ -149,8 +162,12 @@ def plot_service_time_class(df, title_name):
     df.groupby(['year_month']).mean()['service_time[hr]'].plot.bar(ax=ax)
     plt.title('Average service time [hr] per month: ' + title_name)
     plt.xlabel('Month')
+    positions = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    labels = ("5-2019", "6-2019", "7-2019", '8-2019', '9-2019', '10-2019', '11-2019', '12-2019', '1-2020', '2-2020',
+              '3-2020', '4-2020')
+    plt.xticks(positions, labels)
     plt.ylabel('Average service time [hr]')
-    plt.xticks(rotation=70)
+    plt.xticks(rotation=0)
     plt.show()
 
     # Plot average service time per month over time (bar chart)
@@ -158,8 +175,15 @@ def plot_service_time_class(df, title_name):
     df.groupby(['year_month', 'vessel_class']).mean()['service_time[hr]'].unstack().plot.bar(ax=ax)
     plt.title('Average service time [hr] per month per vessel class: ' + title_name)
     plt.xlabel('Month')
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(handles, ["1: Small Feeder", "2: Regional Feeder", '3: Feedermax', '4: Panamax', '5: New Panamax',
+                         '6: Post New Panamax'], title='Vessel Class')
+    positions = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    labels = ("5-2019", "6-2019", "7-2019", '8-2019', '9-2019', '10-2019', '11-2019', '12-2019', '1-2020', '2-2020',
+              '3-2020', '4-2020')
+    plt.xticks(positions, labels)
     plt.ylabel('Average service time [hr]')
-    plt.xticks(rotation=70)
+    plt.xticks(rotation=0)
     plt.show()
 
     # Plot average service time per month over time (line graph)
@@ -167,6 +191,9 @@ def plot_service_time_class(df, title_name):
     df.groupby(['year_month', 'vessel_class']).mean()['service_time[hr]'].unstack().plot(ax=ax)
     plt.title('Average service time [hr] per month per vessel class: ' + title_name)
     plt.xlabel('Month')
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(handles, ["1: Small Feeder", "2: Regional Feeder", '3: Feedermax', '4: Panamax', '5: New Panamax',
+                         '6: Post New Panamax'], title='Vessel Class')
     plt.ylabel('Average service time [hr]')
     plt.show()
 
@@ -179,7 +206,7 @@ def plot_service_time_loa(df, title_name):
     plt.title('Average service time [hr] per month: ' + title_name)
     plt.xlabel('Month')
     plt.ylabel('Average service time [hr]')
-    plt.xticks(rotation=70)
+    plt.xticks(rotation=0)
     plt.show()
 
     # Plot average service time per month over time (bar chart)
@@ -188,7 +215,7 @@ def plot_service_time_loa(df, title_name):
     plt.title('Average service time [hr] per month per length category: ' + title_name)
     plt.xlabel('Month')
     plt.ylabel('Average service time [hr]')
-    plt.xticks(rotation=70)
+    plt.xticks(rotation=0)
     plt.show()
 
     # Plot average service time per month over time (line graph)
@@ -209,7 +236,7 @@ def plot_visuals_ct(df, location):
     df['year_month'] = year_month(df)
 
     # Plot variations on the vessel arrivals
-    plot_vessel_arrivals_class(df, location)
+  #  plot_vessel_arrivals_class(df, location)
 
     # Plot variations on the average service times
     plot_service_time_class(df, location)
@@ -232,11 +259,11 @@ def plot_visuals_loa(df, location):
 
 if __name__ == '__main__':
     # Load data
-    location = 'lb_rdam_gate'
+    location = 'ct_rdam_apm2'
     df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
 
     # Plot for containers
-  #  plot_visuals_ct(df, location)
+    plot_visuals_ct(df, location)
 
-    # Plot for dry bulk and liquid bulk
-    plot_visuals_loa(df, location)
+    # # Plot for dry bulk and liquid bulk
+    # plot_visuals_loa(df, location)

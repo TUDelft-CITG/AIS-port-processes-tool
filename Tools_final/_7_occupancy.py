@@ -95,7 +95,7 @@ def length_present_pertime_adjusted(data, t):
     list_length_present = 0
     for row in data.itertuples():
         if row.terminal_entry_time < t < row.terminal_exit_time:
-            list_length_present += ((int(row.loa) + 15)*1.1)
+            list_length_present += (int(row.loa) + 15)
     return (t, list_length_present)
 
 
@@ -206,23 +206,23 @@ def run_all_occupancy(df, number_of_berths, operating_hours, visualise_berth_oc,
 
 # Test handle
 if __name__ == '__main__':
-    # Load data frame with attached columns, sorted by port entry time
-    location = 'ct_rdam_euromax'
-    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
-
-    """ ....... INPUTS ......... """
-    # Number of berths: (1,2,3... number, or if unknown: 0)
-    number_of_berths = 0  # Input
-    # Operating hours per year:
-    operating_hours = 365 * 24  # Input
-    # Visualise berth occupancy over time (1 = yes)
-    visualise_berth_oc = 0  # Input
-    # Total length terminal [m] (if unknown: 0)
-    length_term = 1900  # Input
-    # Visualise length occupancy over time (1 = yes)
-    visualise_length_oc = 1  # Input
-
-    # Run all occupancy steps
-    df_berth_occupancy, df_length_occupancy, df_all = run_all_occupancy(df, number_of_berths,
-                                                                        operating_hours, visualise_berth_oc,
-                                                                        length_term, visualise_length_oc)
+    # # Load data frame with attached columns, sorted by port entry time
+    # location = 'ct_rdam_euromax'
+    # df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
+    #
+    # """ ....... INPUTS ......... """
+    # # Number of berths: (1,2,3... number, or if unknown: 0)
+    # number_of_berths = 0  # Input
+    # # Operating hours per year:
+    # operating_hours = 365 * 24  # Input
+    # # Visualise berth occupancy over time (1 = yes)
+    # visualise_berth_oc = 0  # Input
+    # # Total length terminal [m] (if unknown: 0)
+    # length_term = 1900  # Input
+    # # Visualise length occupancy over time (1 = yes)
+    # visualise_length_oc = 1  # Input
+    #
+    # # Run all occupancy steps
+    # df_berth_occupancy, df_length_occupancy, df_all = run_all_occupancy(df, number_of_berths,
+    #                                                                     operating_hours, visualise_berth_oc,
+    #                                                                     length_term, visualise_length_oc)
