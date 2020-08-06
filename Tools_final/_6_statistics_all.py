@@ -1,3 +1,10 @@
+""" Step 6. Run all statistical steps on the processed AIS data
+ Input: Processed data [csv file] (entry and exit timestamps for the port area, anchorage area, terminal area)
+ Actions: Attach service times, sort by port entry, inter arrival times, sort by port entry (relative to  first moment
+ in time), visualise study parameters, split into different vessel classes and fit multiple distributions
+Output: Data frame with study parameters, and multiple visualisations (fitted distributions)
+ """
+
 import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
