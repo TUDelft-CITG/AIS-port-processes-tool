@@ -846,17 +846,17 @@ def fit_all_st_distr(df, location, terminal_type):
 if __name__ == '__main__':
     """ ....... INPUTS ......... """
     # Terminal location
-    location = 'lb_zeebrugge'
+    location = 'ct_rdam_apm2'
     # Choose terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
-    terminal_type = 'liquid_bulk'
+    terminal_type = 'container'
     # Number of berths: (1,2,3... number, or if unknown: 0)
-    number_of_berths = 2
+    number_of_berths = 0
     # Operating hours per year:
     operating_hours = 365 * 24
     # Total length terminal [m] (if unknown: 0)
-    length_term = 0
+    length_term = 1500
 
-    # Load raw data
+    # Load data
     df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
 
     # Add service times
