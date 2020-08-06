@@ -58,7 +58,7 @@ def sort_by_port_entry(df):
     df_p = df_p.reset_index(drop=True)
 
     # Add inter arrival time (based on port entries)
-    df_p['inter_arrival_time_port[hr]'] = 0
+    df_p['inter_arrival_time_port[hr]'] = 0.0
     for row in df_p.itertuples():
         if row.Index != 0:
             df_p.at[row.Index, 'inter_arrival_time_port[hr]'] = (row.port_entry_time -
@@ -89,19 +89,52 @@ def sort_by_port_entry_rel(df):
     return df_p
 
 
+# Add vessel class if teu and loa are known (RHDHV Classification)
+# Container terminals
+def add_vessel_class(df):
+    df['vessel_class'] = 0
+    for row in df.itertuples():
+        if row.teu_capacity == 0: # Different vessel type
+            df.at[row.Index, 'vessel_class'] = 0
+        elif row.teu_capacity < 1000: # Small feeder
+            df.at[row.Index, 'vessel_class'] = 1
+        elif (row.teu_capacity >= 1000) and (row.teu_capacity < 2000):  # Regional feeder
+            df.at[row.Index, 'vessel_class'] = 2
+        elif (row.teu_capacity >= 2000) and (row.teu_capacity < 3000):  # Feeder max
+            df.at[row.Index, 'vessel_class'] = 3
+        elif (row.teu_capacity >= 3000) and (row.loa < 295):  # Panamax
+            df.at[row.Index, 'vessel_class'] = 4
+        elif (row.teu_capacity >= 3000) and (row.loa >= 295) and (row.loa < 366):  # New Panamax
+            df.at[row.Index, 'vessel_class'] = 5
+        elif (row.teu_capacity >= 3000) and (row.loa >= 366):  # New Panamax
+            df.at[row.Index, 'vessel_class'] = 6
+    return df['vessel_class']
+
+
+# Keep only certain vessel class
+def keep_certain_vessel_class(df, vessel_class):
+    data = df.copy()
+    drop_list = list()
+    for row in data.itertuples():
+        if row.vessel_class != vessel_class:
+            drop_list.append(row.Index)
+    data = drop_and_report(data, drop_list, "Keep only certain vessel class")
+    return data
+
+
 # Test handle
 if __name__ == '__main__':
-    # Load raw data
-    location = 'ct_rdam_euromax'
-    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
-
-    # Add service, waiting times and WT/ST ratio
-    df = service_waiting_times(df)
-
-    # Based on port entry arrival time, return inter arrival time
-    df_p = sort_by_port_entry(df)
-    df_p.to_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
-
-    # Based on port entry arrival time, return all timestamps relative to t0
-    df_p_rel = sort_by_port_entry_rel(df_p)
+    # # Load raw data
+    # location = 'ct_rdam_euromax'
+    # df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
+    #
+    # # Add service, waiting times and WT/ST ratio
+    # df = service_waiting_times(df)
+    #
+    # # Based on port entry arrival time, return inter arrival time
+    # df_p = sort_by_port_entry(df)
+    # df_p.to_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
+    #
+    # # Based on port entry arrival time, return all timestamps relative to t0
+    # df_p_rel = sort_by_port_entry_rel(df_p)
 

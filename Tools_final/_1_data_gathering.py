@@ -13,6 +13,9 @@ import pandas as pd
 from shapely.geometry import Polygon
 from shapely.geometry import Point
 import gmplot
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+import matplotlib.ticker as mtick
 from datetime import timedelta
 
 
@@ -23,7 +26,8 @@ def adjust_rhdhv_data(data):
     # If necessary, rename column name {"old_name":"new_name"}
     data.rename(columns={"mmsi": "mmsi", "timestamp": "timestamp", "latitude": "lat", "longitude": "lon",
                        "category_ais_platform": "type", "length_overall": "loa", "dead_weight_tonnage": "DWT",
-                       "teu_capacity": "teu_capacity"}, inplace=True)
+                         # todo: als type en category op AWS website weer veranderd zijn, terugwisselen!
+                       "teu_capacity": "teu_capacity", "breadth": "breadth"}, inplace=True)
     data['timestamp'] = pd.to_datetime(data.timestamp, format='%Y-%m-%d %H:%M')
     return data
 
@@ -34,21 +38,57 @@ def sort_data_rows(data):
     return data
 
 
+# Visualise category's left after category filtering
+def category_visual(data):
+    fig, ax = plt.subplots(figsize=(15, 7))
+    data.groupby(['type'])['mmsi'].nunique().plot.bar(ax=ax)
+    plt.title('Number of vessels per vessel type')
+    plt.xlabel('Vessel type')
+    plt.ylabel('Number of vessels (unique MMSI)')
+    plt.xticks(rotation=70)
+    plt.show()
+
 # Remove vessel categories (only keep necessary category)
+# def vessel_categories_CT(data):
+#     drop_list = list()
+#     for row in data.itertuples():
+#         if row.type != 'Container Vessels' and row.type != 'None':
+#             drop_list.append(row.Index)
+#     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (CT)')
+#     return data
+
+# New category filtering (july-2020)
 def vessel_categories_CT(data):
     drop_list = list()
     for row in data.itertuples():
-        if row.type != 'Container Vessels' and row.type != 'None':
+        if row.type != 'General Cargo' and row.type != 'Other Dry Cargo' and row.type != 'Passenger/General Cargo' and \
+                row.type != 'Refrigerated Cargo' and row.type != 'Inland Waterways Dry Cargo / Passenger' and \
+                row.type != 'Inland Waterways Others Non Seagoing' and row.type != 'Other Activities' and \
+                row.type != 'Container' and row.type != 'Other Activities cont' and row.type != 'None':
             drop_list.append(row.Index)
     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (CT)')
     return data
 
 
+# def vessel_categories_DBT(data):
+#     drop_list = list()
+#     for row in data.itertuples():
+#         if row.type != ' Laker' and row.type != 'Cargo Vessels' and row.type != 'Dry Bulk Carriers'\
+#                 and row.type != 'None':
+#             drop_list.append(row.Index)
+#     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (DBT)')
+#     return data
+
+
+# New category filtering (july-2020)
 def vessel_categories_DBT(data):
     drop_list = list()
     for row in data.itertuples():
-        if row.type != ' Laker' and row.type != 'Cargo Vessels' and row.type != 'Dry Bulk Carriers'\
-                and row.type != 'None':
+        if row.type != 'Bulk Dry' and row.type != 'Bulk Dry/Liquid' and row.type != 'Other Bulk Dry' and \
+                row.type != 'Self Discharging Bulk Dry' and row.type != 'Passenger/General Cargo' and \
+                row.type != 'Refrigerated Cargo' and row.type != 'Inland Waterways Dry Cargo / Passenger' and \
+                row.type != 'Inland Waterways Others Non Seagoing' and row.type != 'Other Activities cont' and \
+                row.type != 'Other Activities' and row.type != 'None':
             drop_list.append(row.Index)
     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (DBT)')
     return data
@@ -57,7 +97,14 @@ def vessel_categories_DBT(data):
 def vessel_categories_LBT(data):
     drop_list = list()
     for row in data.itertuples():
-        if row.type != 'Tankers' and row.type != 'Cargo Vessels' and row.type != 'None':
+        # Old way of category's
+        # if row.type != 'Tankers' and row.type != 'Cargo Vessels' and row.type != 'None':
+        #     drop_list.append(row.Index)
+        # New way of category's
+        if row.type != 'Oil' and row.type != 'Inland Waterways Tanker' and row.type != 'Other Activities cont' \
+            and row.type != 'Chemical' and row.type != 'Gas tankers' and row.type != 'None' and \
+                row.type != 'Inland Waterways Others Non Seagoing' and row.type != 'Bulk Dry/Liquid' and \
+                row.type != 'Other liquids' and row.type != 'Other Activities':
             drop_list.append(row.Index)
     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (LBT)')
     return data
@@ -143,6 +190,15 @@ def add_present_polygon_2(data, poly_term, poly_anch1, poly_anch2):
                 or poly_anch2.contains(Point(row.lon, row.lat)) == bool(True):
             data.at[row.Index, 'in_anchorage'] = 1
 
+    return data
+
+
+# Add new column: whether location is inside the terminal or not (yes=1, no=0)
+def add_present_terminal(data, poly_term):
+    data['in_terminal'] = 0
+    for row in data.itertuples():
+        if poly_term.contains(Point(row.lon, row.lat)) == bool(True):
+            data.at[row.Index, 'in_terminal'] = 1
     return data
 
 

@@ -7,7 +7,9 @@
 
 import pandas as pd
 import numpy as np
-from _6_attach_all_columns import service_waiting_times, sort_by_port_entry, sort_by_port_entry_rel
+from _1_data_gathering import category_visual
+from _6_attach_all_columns import service_waiting_times, sort_by_port_entry, sort_by_port_entry_rel, add_vessel_class, \
+keep_certain_vessel_class
 from _7_occupancy import run_all_occupancy
 from _8_visualisation import plot_service_times, plot_inter_arrival_times, plot_waiting_times, plot_wt_st_ratio,\
     plot_wt_st, jointplot_wt_st
@@ -19,6 +21,8 @@ import seaborn as sns
 def attach_all_columns(df, relative):
     # Add service and waiting times
     df = service_waiting_times(df)
+    # Add vessel class
+    df['vessel_class'] = add_vessel_class(df)
     # Based on port entry arrival time, return inter arrival time
     df_p = sort_by_port_entry(df)
     # Based on port entry arrival time, return all timestamps relative to t0
@@ -29,8 +33,10 @@ def attach_all_columns(df, relative):
 
     # Return averages
     print('Average service time: ', np.round(df_p['service_time[hr]'].mean(), 2), 'hr')
+    print('Median service time: ', np.round(df_p['service_time[hr]'].median(), 2), 'hr')
     print('Average waiting time: ', np.round(df_p['waiting_time[hr]'].mean(), 2), 'hr')
-    print('Average WT/ST ratio: ', np.round(df_p['waiting/service_time[%]'].mean(), 2), '%')
+    print('Median waiting time: ', np.round(df_p['waiting_time[hr]'].median(), 2), 'hr')
+    # print('Average WT/ST ratio: ', np.round(df_p['waiting/service_time[%]'].mean(), 2), '%')
 
     return df_p
 
@@ -45,29 +51,29 @@ def plot_visuals(df, ST, IAT, WT, adjust_WT, WT_ST, WT_ST_plt, WT_ST_joint):
         # Plot inter arrival times (based on port entry)
         plot_inter_arrival_times(df, location + ': Inter arrival times based on port entry')
 
-    if WT == 1:
-        # Plot waiting times
-        plot_waiting_times(df, location + ': Waiting times', location + ': Adjusted waiting times', adjust_WT)
-
-    if WT_ST == 1:
-        # Plot WT/ST ratio
-        plot_wt_st_ratio(df, location + ': Waiting vs service times', 0)
-        plot_wt_st_ratio(df, location + ': Waiting vs service times (adjusted y lim)', 1)
-
-    if WT_ST_plt == 1:
-        # Plot waiting times across service times
-        plot_wt_st(df, location + ': Service times vs waiting times', 10, 20, 30)
-
-    if WT_ST_joint == 1:
-        # Jointplot of waiting times vs service times
-        jointplot_wt_st(df)
+    # if WT == 1:
+    #     # Plot waiting times
+    #     plot_waiting_times(df, location + ': Waiting times', location + ': Adjusted waiting times', adjust_WT)
+    #
+    # if WT_ST == 1:
+    #     # Plot WT/ST ratio
+    #     plot_wt_st_ratio(df, location + ': Waiting vs service times', 0)
+    #     plot_wt_st_ratio(df, location + ': Waiting vs service times (adjusted y lim)', 1)
+    #
+    # if WT_ST_plt == 1:
+    #     # Plot waiting times across service times
+    #     plot_wt_st(df, location + ': Service times vs waiting times', 10, 20, 30)
+    #
+    # if WT_ST_joint == 1:
+    #     # Jointplot of waiting times vs service times
+    #     jointplot_wt_st(df)
 
 
 # Test handle
 if __name__ == '__main__':
     # Load raw data
-    location = 'db_dunkirk_AM'
-    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
+    location = 'ct_rdam_apm2'
+    df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
 
     """ ....... INPUTS ......... """
     # Relative = 0: keep original data timestamps, = 1: normalize data
@@ -79,24 +85,27 @@ if __name__ == '__main__':
     # Visualise berth occupancy over time (1 = yes) (visualises original occupancy, not relative)
     visualise_berth_oc = 0  # Input
     # Total length terminal [m] (if unknown: 0)
-    length_term = 1700 # Input
+    length_term = 1500 # Input
     # Visualise length occupancy over time (1 = yes) (visualises original length, not relative)
     visualise_length_oc = 1  # Input
     # Visualise service times # 1 = yes, 0 = no
     ST_vis = 1
     # Visualise inter arrival times # 1 = yes, 0 = no
     IAT_vis = 1
-    # Visualise waiting times # 1 = yes, 0 = no.
-    adjust_WT = 5 # number of first x hrs to delete from adjusted visualisation of waiting times
-    WT_vis = 1
-    # Visualise WT/ST ratio in box-plot # 1 = yes, 0 = no.
-    WT_ST_vis = 1
-    # Visualise WT in terms of ST # 1 = yes, 0 = no.
-    WT_ST_plt_vis = 1
-    # Visualise joint-plot wt - st
-    WT_ST_joint = 1
+    # # Visualise waiting times # 1 = yes, 0 = no.
+    # adjust_WT = 5 # number of first x hrs to delete from adjusted visualisation of waiting times
+    # WT_vis = 1
+    # # Visualise WT/ST ratio in box-plot # 1 = yes, 0 = no.
+    # WT_ST_vis = 1
+    # # Visualise WT in terms of ST # 1 = yes, 0 = no.
+    # WT_ST_plt_vis = 1
+    # # Visualise joint-plot wt - st
+    # WT_ST_joint = 1
 
     """ ........ Analyse processed AIS data frame ......... """
+    # Visualise category's left after category filtering
+  #  category_visual(df)
+
     # Attach all columns (ST, WT, IAT)
     df = attach_all_columns(df, relative)
 
@@ -118,13 +127,16 @@ if __name__ == '__main__':
     df_iat = np.around(iat_distributions(df, location), 4)
 
     # Save data-frames
-    df.to_csv('Data-frames/Results_phase_2/' + location + '/Df_stats_' + location + '.csv')
-    df_st.to_csv('Data-frames/Results_phase_2/' + location + '/Df_st_' + location + '.csv')
-    df_iat.to_csv('Data-frames/Results_phase_2/' + location + '/Df_iat_' + location + '.csv')
+    df.to_csv('Data-frames/Results_phase_3/' + location + '/Df_stats_' + location + '.csv')
+    df_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_' + location + '.csv')
+    df_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_' + location + '.csv')
     # Only if length occupancy is available
     if length_term > 0:
-        df_length_occupancy.to_csv('Data-frames/Results_phase_2/' + location + '/Df_length_occup_' + location + '.csv')
+        df_length_occupancy.to_csv('Data-frames/Results_phase_3/' + location + '/Df_length_occup_' + location + '.csv')
     # Only if terminal occupancy is available
     if number_of_berths > 0:
-        df_berth_occupancy.to_csv('Data-frames/Results_phase_2/' + location + '/Df_berth_occup_' + location + '.csv')
+        df_berth_occupancy.to_csv('Data-frames/Results_phase_3/' + location + '/Df_berth_occup_' + location + '.csv')
+
+    # Visualise certain MMSI
+
 

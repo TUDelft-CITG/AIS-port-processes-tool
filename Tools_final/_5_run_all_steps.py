@@ -19,7 +19,7 @@ class MyXGBClassifier(XGBClassifier):
         return None
 pd.options.mode.chained_assignment = None
 from _1_data_gathering import adjust_rhdhv_data, sort_data_rows, vessel_categories_CT, vessel_categories_DBT, \
-    vessel_categories_LBT, drop_and_report, add_present_polygon_1, add_present_polygon_2, label_vessel_tracks, \
+    vessel_categories_LBT, drop_and_report, add_present_terminal, add_present_polygon_1, add_present_polygon_2, label_vessel_tracks, \
     keep_data_terminal, keep_data_anchorage, figure_google_maps_1, figure_google_maps_2
 from _2_data_cleaning import clean_data_all, clean_data_rounding, clean_duplicates, delete_faulty_inputs
 from _3_data_enrichment import process_data_all
@@ -168,12 +168,16 @@ def keep_berthed_MMSI(data, df_terminal):
 # Label vessel tracks for entire port, for new MMSI or when same MMSI but message more than 12 hrs earlier
 def label_vessel_tracks_port(data):
     data['timestamp'] = pd.to_datetime(data.timestamp, format='%Y-%m-%d %H:%M')
+    poly_term = Polygon([Coord1_term, Coord2_term, Coord3_term, Coord4_term])
+    # When vessel at terminal, might turn of AIS, longer time of now messages. To prevent errors add:
+    data = add_present_terminal(data, poly_term)
     track_numbers = 0
     data['port_track_number'] = 0
     for row in data.itertuples():
         if row.Index != 0 and ((data.at[row.Index - 1, 'mmsi'] != row.mmsi) or
                                (data.at[row.Index - 1, 'mmsi'] == row.mmsi and
-                                (row.timestamp - data.at[row.Index - 1, 'timestamp']).total_seconds() > 12*3600)):
+                                (row.timestamp - data.at[row.Index - 1, 'timestamp']).total_seconds() > 12*3600))\
+                and data.at[row.Index, 'in_terminal'] != 1:
             track_numbers += 1
             data.at[row.Index, 'port_track_number'] = track_numbers
         elif row.Index != 0:
@@ -235,8 +239,9 @@ def new_data_frame(df_port, df_term_berthed_tracks):
     df_new_merge = pd.merge(left=df_new, right=df_term_berthed_tracks, left_on='terminal_exit_time',
                             right_on='timestamp', how='inner')
     df_new = df_new_merge[
-        ['term_track_number', 'port_track_number', 'mmsi', 'loa', 'DWT', 'teu_capacity', 'port_entry_time',
-         'port_exit_time', 'terminal_entry_time', 'terminal_exit_time', 'anchorage_entry_time', 'anchorage_exit_time']]
+        ['mmsi', 'loa', 'DWT', 'type', 'breadth', 'term_track_number', 'port_track_number',  'teu_capacity',
+         'port_entry_time', 'port_exit_time', 'terminal_entry_time', 'terminal_exit_time', 'anchorage_entry_time',
+         'anchorage_exit_time']]
 
     for row in df_new.itertuples():
         # Add entry and exit time for anchorage
@@ -321,21 +326,21 @@ def new_data_frame(df_port, df_term_berthed_tracks):
 
 # RUN ALL
 def run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier):
-    """" ............... DATA GATHERING ................  """
+    """ ............... DATA COLLECTION & SPLITTING ................  """
     df_terminal, df_anchorage, df_port = data_gathering(df, terminal_type, anchorage_areas, visualise)
 
     """" ............... DATA CLEANING (TERMINAL & PORT)  ................  """
     df_terminal = clean_data_all(df_terminal)
     df_port = clean_port_data(df_port)
 
-    """" ............... DATA PROCESSING (TERMINAL) ................  """
+    """" ............... DATA ENRICHMENT: SOG (TERMINAL) ................  """
     df_terminal = process_data_all(df_terminal)
     df_terminal_OG = df_terminal.copy()
 
-    """" ............... ADDING FEATURES FOR EXTRACTING VESSEL TRACKS ................  """
+    """" .......... ADDING FEATURES FOR EXTRACTING VESSEL TRACKS (TERMINAL)..........  """
     df_features = processing_for_ML_without_seaweb(df_terminal)
 
-    """" ............... EXTRACTING (NOT BERTHED) VESSEL TRACKS ................  """
+    """" ............... EXTRACTING (NOT BERTHED) VESSEL TRACKS (TERMINAL) ................  """
     df_term_final_full, df_term_final_per_track = extracting_vessel_tracks(df_features, classifier, df_terminal_OG)
 
     """ ......... FILTER PORT AND ANCHORAGE AREA, KEEP ONLY MMSI NUMBERS THAT BERTH """
@@ -349,7 +354,7 @@ def run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier):
     """ ............ RETURN NEW DATA FRAME WITH FIRST & LAST TIMESTAMPS ........ """
     df_new = new_data_frame(df_port_mmsi1, df_term_final_per_track)
 
-    return df_new
+    return df_new, df_term_final_full
 
 
 # Test handle
@@ -358,8 +363,8 @@ if __name__ == '__main__':
     starttime = time.time()
 
     # Load raw data
-    location = 'lb_rdam_shell'
-    df = pd.read_csv('Data-frames/Results_phase_2/' + location + '/Raw_data_port.csv')
+    location = 'lb_rdam_gate'
+    df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Raw_data_port.csv')
 
     """ For every new location, necessary inputs """
     # Choose vessel category based on terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
@@ -367,15 +372,15 @@ if __name__ == '__main__':
 
     # Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
     #    example coordX = (lon, lat)
-    Coord1_term = (4.129769, 51.951270)
-    Coord2_term = (4.142794, 51.952341)
-    Coord3_term = (4.143867, 51.955396)
-    Coord4_term = (4.129061, 51.955383)
+    Coord1_term = (4.079255, 51.965373)
+    Coord2_term = (4.072758, 51.974283)
+    Coord3_term = (4.076569, 51.974456)
+    Coord4_term = (4.082441, 51.966336)
 
     # Input latitude and longitude locations of port polygon.
     Coord1_port = (3.5870, 52.2648)
-    Coord2_port = (4.329426, 52.018584)
-    Coord3_port = (3.965808, 51.664617)
+    Coord2_port = (4.2599, 52.0322)
+    Coord3_port = (3.7546, 51.7593)
     Coord4_port = (2.7823, 52.0119)
 
     # Choose number of anchorage areas: one or two
@@ -401,10 +406,11 @@ if __name__ == '__main__':
     with open('classifier_pickle', 'rb') as f:
         classifier = pickle.load(f)
     # Run all steps
-    df_new = run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier)
+    df_new, df_new_term_full = run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier)
 
     # Export data set
-    df_new.to_csv('Data-frames/Results_phase_2/' + location + '/Final_df_' + location + '.csv')
+    df_new.to_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
+    df_new_term_full.to_csv('Data-frames/Results_phase_3/' + location + '/Final_df_full_term_' + location + '.csv')
 
     print('Time for 5.run_all_steps:', (time.time() - starttime)/60, 'minutes')
 
