@@ -1,3 +1,10 @@
+""" Step 6. Run all statistical steps on the processed AIS data
+ Input: Processed data [csv file] (entry and exit timestamps for the port area, anchorage area, terminal area)
+ Actions: Attach service times, sort by port entry, inter arrival times, sort by port entry (relative to  first moment
+ in time), visualise study parameters, split into different vessel classes and fit multiple distributions
+Output: Data frame with study parameters, and multiple visualisations (fitted distributions)
+ """
+
 import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
@@ -184,11 +191,11 @@ def add_vessel_class(df, terminal_type):
 def vessel_arrivals_per_class_type(df):
     # Plot vessel arrivals per vessel class per type
     fig, ax = plt.subplots()
-    df.groupby(['vessel_class', 'type']).count()['terminal_entry_time'].unstack().plot.bar(ax=ax)
+    df.groupby(['vessel_class', 'type']).count()['terminal_entry_time'].unstack().plot.bar(ax=ax, stacked=True)
     plt.xticks(rotation=0)
     plt.legend(title='Vessel type')
     plt.xlabel('Vessel class')
-    plt.ylabel('Number of arrivals per vessel type')
+    plt.ylabel('Number of arrivals per vessel class')
     plt.title('Vessel type per vessel class')
 
 
@@ -356,19 +363,6 @@ def berth_occupancy(data, number_of_berths, operating_hours):
                                                                                          ' occupancy is',
           np.round(average_occupancy_op_hours, 2), '%')
 
-    plt.figure()
-    plt.xlabel('Time [per hour]')
-    plt.ylabel('Occupancy at terminal [%]')
-    plt.title('Terminal occupancy over time')
-    plt.plot(df_occupancy.timestamp, df_occupancy['occupancy[%]'])
-
-    x = np.linspace(1, number_of_berths, number_of_berths)
-    for i in x:
-        berth = [(100/number_of_berths)*i, (100/number_of_berths)*i]
-        plt.plot([df_occupancy.timestamp.min(), df_occupancy.timestamp.max()], berth, linestyle='--', label=i)
-    plt.legend(title='Berth')
-    plt.show()
-
     return df_occupancy
 
 
@@ -455,16 +449,6 @@ def length_occupancy(data, total_length, operating_hours):
           '%, relative to the total operating time the average length occupancy is',
           np.round(adjust_avg_length_occup_op_hours, 2), '%')
 
-    plt.figure()
-    plt.xlabel('Time [per hour]')
-    plt.ylabel('Length occupancy [%]')
-    plt.title('Adjusted length occupancy over time')
-    plt.plot(df_occupancy.timestamp, df_occupancy['occupancy_length_adjust[%]'])
-    plt.plot([df_occupancy.timestamp.min(), df_occupancy.timestamp.max()], [100, 100], linestyle='--',
-             label=total_length)
-    plt.legend(title='Length available [m]')
-    plt.show()
-
     return df_occupancy
 
 
@@ -485,6 +469,41 @@ def run_all_occupancy(df, number_of_berths, operating_hours, length_term):
         print('The length of terminal was not specified, thus the length occupancy can not be defined')
 
     return df_berth_occupancy, df_length_occupancy, df
+
+
+# Plot occupancy (berth or length)
+def plot_occupancy(df_length_occupancy, df_berth_occupancy, total_length, number_of_berths):
+    # Length occupancy
+    if total_length > 0:
+        plt.figure()
+        plt.xlabel('Time [per hour]')
+        plt.ylabel('Length occupancy [%]')
+        plt.title('Adjusted length occupancy over time')
+        plt.plot(df_length_occupancy.timestamp, df_length_occupancy['occupancy_length_adjust[%]'])
+        plt.plot([df_length_occupancy.timestamp.min(), df_length_occupancy.timestamp.max()], [100, 100], linestyle='--',
+                 label='Maximum length available')
+        plt.plot([df_length_occupancy.timestamp.min(), df_length_occupancy.timestamp.max()],
+                 [df_length_occupancy['occupancy_length_adjust[%]'].mean(),
+                  df_length_occupancy['occupancy_length_adjust[%]'].mean()], linestyle='--',
+                 label='Average occupancy')
+        plt.legend()
+        plt.show()
+
+    # Berth occupancy
+    if number_of_berths > 0:
+        plt.figure()
+        plt.xlabel('Time [per hour]')
+        plt.ylabel('Occupancy at terminal [%]')
+        plt.title('Terminal occupancy over time')
+        plt.plot(df_berth_occupancy.timestamp, df_berth_occupancy['occupancy[%]'])
+
+        x = np.linspace(1, number_of_berths, number_of_berths)
+        for i in x:
+            berth = [(100 / number_of_berths) * i, (100 / number_of_berths) * i]
+            plt.plot([df_berth_occupancy.timestamp.min(), df_berth_occupancy.timestamp.max()], berth, linestyle='--',
+                     label=i)
+        plt.legend(title='Berth')
+        plt.show()
 
 
 # Plot service times
@@ -510,60 +529,128 @@ def plot_inter_arrival_times(data, title_name):
 
 
 # Plot CDF for inter arrival and service times per vessel class
-def plot_distr_iat_st_class(df, bin_number, terminal_type):
+def plot_distr_iat_st_class(df, bin_number, terminal_type, df_iat, df_st):
     # Split data set into different classes
     if terminal_type == 'container':
         df_1, df_2, df_3, df_4, df_5 = split_data_frame_class(df, 'container')
         list_class = ['total', 'c_1', 'c_2', 'c_3', 'c_4', 'c_5']
-    if terminal_type == 'dry_bulk':
+    elif terminal_type == 'dry_bulk':
         df_1, df_2, df_3, df_4, df_5 = split_data_frame_class(df, 'dry_bulk')
         list_class = ['total', 'db_1', 'db_2', 'db_3', 'db_4', 'db_5']
-    if terminal_type == 'liquid_bulk':
+    elif terminal_type == 'liquid_bulk':
         df_1, df_2, df_3, df_4 = split_data_frame_class(df, 'liquid_bulk')
         list_class = ['total', 'lng_1', 'lng_2', 'lng_3', 'lng_4']
     else:
         print('No correct terminal type was given')
 
     # Plot CDF IAT
-    plt.figure()
-    plt.hist(df['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[0])
-    plt.hist(df_1['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[1])
-    plt.hist(df_2['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[2])
-    plt.hist(df_3['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[3])
-    plt.hist(df_4['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[4])
+    hx_df, hy_df = np.histogram(df['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
+    hx_df_1, hy_df_1 = np.histogram(df_1['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
+    hx_df_2, hy_df_2 = np.histogram(df_2['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
+    hx_df_3, hy_df_3 = np.histogram(df_3['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
+    hx_df_4, hy_df_4 = np.histogram(df_4['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
     if terminal_type != 'liquid_bulk':
-        plt.hist(df_5['inter_arrival_time_port[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[5])
-    plt.legend(title='Vessel class')
-    plt.ylabel('Cdf [%]')
+        hx_df_5, hy_df_5 = np.histogram(df_5['inter_arrival_time_port[hr]'], bins=bin_number, density=True)
+
+    plt.figure()
+    plt.step(hy_df[1:], (np.cumsum(hx_df) * (hy_df[1] - hy_df[0])), 'k-',
+             label=(list_class[0] + ' / N = ' + str(df['inter_arrival_time_port[hr]'].count())))
+    plt.step(hy_df_1[1:], (np.cumsum(hx_df_1) * (hy_df_1[1] - hy_df_1[0])),
+             label=(list_class[1] + ' / N = ' + str(df_1['inter_arrival_time_port[hr]'].count())))
+    plt.step(hy_df_2[1:], (np.cumsum(hx_df_2) * (hy_df_2[1] - hy_df_2[0])),
+             label=(list_class[2] + ' / N = ' + str(df_2['inter_arrival_time_port[hr]'].count())))
+    plt.step(hy_df_3[1:], (np.cumsum(hx_df_3) * (hy_df_3[1] - hy_df_3[0])),
+             label=(list_class[3] + ' / N = ' + str(df_3['inter_arrival_time_port[hr]'].count())))
+    plt.step(hy_df_4[1:], (np.cumsum(hx_df_4) * (hy_df_4[1] - hy_df_4[0])),
+             label=(list_class[4] + ' / N = ' + str(df_4['inter_arrival_time_port[hr]'].count())))
+    if terminal_type != 'liquid_bulk':
+        plt.step(hy_df_5[1:], (np.cumsum(hx_df_5) * (hy_df_5[1] - hy_df_5[0])),
+             label=(list_class[5] + ' / N = ' + str(df_5['inter_arrival_time_port[hr]'].count())))
+    plt.legend(title='Vessel class / number of arrivals')
+    plt.ylabel('Cdf')
     plt.xlabel('Inter arrival times [hr]')
     plt.title(location + ': inter arrival times per class (CDF)')
+    plt.xlim(0, df['inter_arrival_time_port[hr]'].max())
+    plt.ylim(0, 1)
     plt.show()
 
     # Plot CDF ST
-    plt.figure()
-    plt.hist(df['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[0])
-    plt.hist(df_1['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[1])
-    plt.hist(df_2['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[2])
-    plt.hist(df_3['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[3])
-    plt.hist(df_4['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[4])
+    hx_df, hy_df = np.histogram(df['service_time[hr]'], bins=bin_number, density=True)
+    hx_df_1, hy_df_1 = np.histogram(df_1['service_time[hr]'], bins=bin_number, density=True)
+    hx_df_2, hy_df_2 = np.histogram(df_2['service_time[hr]'], bins=bin_number, density=True)
+    hx_df_3, hy_df_3 = np.histogram(df_3['service_time[hr]'], bins=bin_number, density=True)
+    hx_df_4, hy_df_4 = np.histogram(df_4['service_time[hr]'], bins=bin_number, density=True)
     if terminal_type != 'liquid_bulk':
-        plt.hist(df_5['service_time[hr]'], bins=bin_number, density=True, cumulative=True, histtype='step',
-             label=list_class[5])
-    plt.legend(title='Vessel class')
-    plt.ylabel('Cdf [%]')
+        hx_df_5, hy_df_5 = np.histogram(df_5['service_time[hr]'], bins=bin_number, density=True)
+
+    plt.figure()
+    plt.step(hy_df[1:], (np.cumsum(hx_df) * (hy_df[1] - hy_df[0])), 'k-',
+             label=(list_class[0] + ' / N = ' + str(df['service_time[hr]'].count())))
+    plt.step(hy_df_1[1:], (np.cumsum(hx_df_1) * (hy_df_1[1] - hy_df_1[0])),
+             label=(list_class[1] + ' / N = ' + str(df_1['service_time[hr]'].count())))
+    plt.step(hy_df_2[1:], (np.cumsum(hx_df_2) * (hy_df_2[1] - hy_df_2[0])),
+             label=(list_class[2] + ' / N = ' + str(df_2['service_time[hr]'].count())))
+    plt.step(hy_df_3[1:], (np.cumsum(hx_df_3) * (hy_df_3[1] - hy_df_3[0])),
+             label=(list_class[3] + ' / N = ' + str(df_3['service_time[hr]'].count())))
+    plt.step(hy_df_4[1:], (np.cumsum(hx_df_4) * (hy_df_4[1] - hy_df_4[0])),
+             label=(list_class[4] + ' / N = ' + str(df_4['service_time[hr]'].count())))
+    if terminal_type != 'liquid_bulk':
+        plt.step(hy_df_5[1:], (np.cumsum(hx_df_5) * (hy_df_5[1] - hy_df_5[0])),
+                 label=(list_class[5] + ' / N = ' + str(df_5['service_time[hr]'].count())))
+    plt.legend(title='Vessel class / number of arrivals')
+    plt.ylabel('Cdf')
+    plt.xlim(0, df['service_time[hr]'].max())
+    plt.ylim(0, 1)
     plt.xlabel('Service times [hr]')
     plt.title(location + ': service times per class (CDF)')
+    plt.show()
+
+    # Plot description of IAT
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Inter arrival time distribution characteristics, per vessel class')
+
+    ax1.plot(df_iat['vessel_class'], df_iat['mean'], label='mean')
+    ax1.plot(df_iat['vessel_class'], df_iat['std'], label='std')
+    ax1.plot(df_iat['vessel_class'], df_iat['min'], label='min')
+    ax1.plot(df_iat['vessel_class'], df_iat['25%'], label='25%')
+    ax1.plot(df_iat['vessel_class'], df_iat['50%'], label='50%')
+    ax1.plot(df_iat['vessel_class'], df_iat['75%'], label='75%')
+    ax1.plot(df_iat['vessel_class'], df_iat['max'], label='max')
+    ax1.legend(loc='upper left')
+    ax1.set_xlabel('Vessel class')
+    ax1.set_ylabel('Inter arrival time [hr]')
+
+    ax2.plot(df_iat['vessel_class'], df_iat['mean'], label='mean')
+    ax2.plot(df_iat['vessel_class'], df_iat['std'], label='std')
+    ax2.plot(df_iat['vessel_class'], df_iat['min'], label='min')
+    ax2.plot(df_iat['vessel_class'], df_iat['25%'], label='25%')
+    ax2.plot(df_iat['vessel_class'], df_iat['50%'], label='50%')
+    ax2.plot(df_iat['vessel_class'], df_iat['75%'], label='75%')
+    ax2.set_xlabel('Vessel class')
+    plt.show()
+
+    # Plot description of ST
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Service time distribution characteristics, per vessel class')
+
+    ax1.plot(df_st['vessel_class'], df_st['mean'], label='mean')
+    ax1.plot(df_st['vessel_class'], df_st['std'], label='std')
+    ax1.plot(df_st['vessel_class'], df_st['min'], label='min')
+    ax1.plot(df_st['vessel_class'], df_st['25%'], label='25%')
+    ax1.plot(df_st['vessel_class'], df_st['50%'], label='50%')
+    ax1.plot(df_st['vessel_class'], df_st['75%'], label='75%')
+    ax1.plot(df_st['vessel_class'], df_st['max'], label='max')
+    ax1.legend(loc='upper left')
+    ax1.set_xlabel('Vessel class')
+    ax1.set_ylabel('Service time [hr]')
+
+    ax2.plot(df_st['vessel_class'], df_st['mean'], label='mean')
+    ax2.plot(df_st['vessel_class'], df_st['std'], label='std')
+    ax2.plot(df_st['vessel_class'], df_st['min'], label='min')
+    ax2.plot(df_st['vessel_class'], df_st['25%'], label='25%')
+    ax2.plot(df_st['vessel_class'], df_st['50%'], label='50%')
+    ax2.plot(df_st['vessel_class'], df_st['75%'], label='75%')
+    ax2.set_xlabel('Vessel class')
     plt.show()
 
 
@@ -572,6 +659,8 @@ def iat_distributions(df, location):
     if df.shape[0] > 0:
         data = df['inter_arrival_time_port[hr]']
         bin_number = 100
+        y, x = np.histogram(data, bins=bin_number, density=True)
+        x = (x + np.roll(x, -1))[:-1] / 2.0
         x_0 = np.linspace(0, data.max(), 100)
         distribution = []
         location_par = []
@@ -579,72 +668,103 @@ def iat_distributions(df, location):
         shape_par = []
         D = []
         p = []
+        chi_p = []
+        chi = []
+
+        histo, bin_edges = np.histogram(data, bins=bin_number, density=False)
+        observed_values = histo
+        n = len(data)
 
         # Exponential (same as Gamma with a = 1 and Weibull with c =1)
         distribution.append('Exponential')
         exp_loc, exp_scale = scipy.stats.distributions.expon.fit(data)
-        location_par.append(exp_loc)
-        scale_par.append(exp_scale)
-        shape_par.append(1)
-        D.append(scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[1])
+        location_par.append((np.around(exp_loc, 4)))
+        scale_par.append((np.around(exp_scale, 4)))
+        shape_par.append((np.around(1, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.expon.cdf(bin_edges, exp_loc, exp_scale))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Gamma
         distribution.append('Gamma')
         a_gam, loc_gam, scale_gam = scipy.stats.distributions.gamma.fit(data)
-        location_par.append(loc_gam)
-        scale_par.append(scale_gam)
-        shape_par.append(a_gam)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[1])
+        location_par.append((np.around(loc_gam, 4)))
+        scale_par.append((np.around(scale_gam, 4)))
+        shape_par.append((np.around(a_gam, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam, loc_gam, scale_gam))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Erlang-2 (same as Gamma with a = 2)
         distribution.append('Erlang-2')
         a_gam2, loc_gam2, scale_gam2 = scipy.stats.distributions.gamma.fit(data, fa=2)
-        location_par.append(loc_gam2)
-        scale_par.append(scale_gam2)
-        shape_par.append(a_gam2)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=2))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=2))[1])
+        location_par.append((np.around(loc_gam2, 4)))
+        scale_par.append((np.around(scale_gam2, 4)))
+        shape_par.append((np.around(a_gam2, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=2))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=2))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam2, loc_gam2, scale_gam2))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Weibull distribution
         distribution.append('Weibull')
         c_weib, loc_weib, scale_weib = scipy.stats.distributions.weibull_min.fit(data)
-        location_par.append(loc_weib)
-        scale_par.append(scale_weib)
-        shape_par.append(c_weib)
-        D.append(scipy.stats.kstest(data, scipy.stats.weibull_min.cdf,
-                                                     args=scipy.stats.weibull_min.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.weibull_min.cdf,
-                                                     args=scipy.stats.weibull_min.fit(data))[1])
+        location_par.append((np.around(loc_weib, 4)))
+        scale_par.append((np.around(scale_weib, 4)))
+        shape_par.append((np.around(c_weib, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.weibull_min.cdf,
+                                                     args=scipy.stats.weibull_min.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.weibull_min.cdf,
+                                                     args=scipy.stats.weibull_min.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.weibull_min.cdf(bin_edges, c_weib, loc_weib, scale_weib))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Create table with results
         df_results_iat = pd.DataFrame(distribution, columns=['Distribution_type'])
         df_results_iat['Location_parameter'] = location_par
         df_results_iat['Scale_parameter'] = scale_par
         df_results_iat['Shape_parameter'] = shape_par
-        df_results_iat['D_value'] = D
-        df_results_iat['p_value'] = p
-        df_results_iat['p_lim'] = 'undefined'
+        df_results_iat['ks_D'] = D
+        df_results_iat['ks_p'] = p
+        df_results_iat['ks_p_lim'] = 'undefined'
+        df_results_iat['chi_p'] = chi_p
+        df_results_iat['chi'] = chi
+        df_results_iat['chi_p_lim'] = 'undefined'
         for row in df_results_iat.itertuples():
-            if float(row.p_value) > 0.05:
-                df_results_iat.at[row.Index, 'p_lim'] = 'Yes'
+            if float(row.ks_p) > 0.05:
+                df_results_iat.at[row.Index, 'ks_p_lim'] = 'Yes'
             else:
-                df_results_iat.at[row.Index, 'p_lim'] = 'No'
+                df_results_iat.at[row.Index, 'ks_p_lim'] = 'No'
+        for row in df_results_iat.itertuples():
+            if float(row.chi_p) > 0.05:
+                df_results_iat.at[row.Index, 'chi_p_lim'] = 'Yes'
+            else:
+                df_results_iat.at[row.Index, 'chi_p_lim'] = 'No'
 
         # Plot distributions
         # data cdf
+        hx, hy = np.histogram(data, bins=bin_number, density=True)
+        dx = hy[1] - hy[0]
+        F1 = np.cumsum(hx) * dx
         plt.figure()
-        plt.hist(data, bins=bin_number, density=True, cumulative=True, histtype='step', label='Data')
+        plt.step(hy[1:], F1, 'k-', label='Data')
         # fitted cdf
         plt.plot(x_0, scipy.stats.distributions.expon.cdf(x_0, exp_loc, exp_scale), 'r-', label='Exponential')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam, loc_gam, scale_gam), 'g-', label='Gamma')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam2, loc_gam2, scale_gam2), 'b-', label='Erlang-2')
         plt.plot(x_0, scipy.stats.distributions.weibull_min.cdf(x_0, c_weib, loc_weib, scale_weib), 'y-', label='Weibull')
         plt.legend()
-        plt.ylabel('Cdf [%]')
+        plt.ylabel('Cdf')
+        plt.xlim(0, data.max())
+        plt.ylim(0, 1)
         plt.xlabel('Inter arrival times [hr]')
         plt.title(location + ': distribution fitting for inter arrival times')
         plt.show()
@@ -661,6 +781,9 @@ def st_distributions(df, location):
         data = df['service_time[hr]']
         bin_number = 100
         x_0 = np.linspace(0, data.max(), 100)
+        y, x = np.histogram(data, bins=bin_number, density=True)
+        x = (x + np.roll(x, -1))[:-1] / 2.0
+        x_0 = np.linspace(0, data.max(), 100)
         distribution = []
         location_par = []
         scale_par = []
@@ -668,94 +791,124 @@ def st_distributions(df, location):
         shape_2_par= []
         D = []
         p = []
+        chi_p = []
+        chi = []
+
+        histo, bin_edges = np.histogram(data, bins=bin_number, density=False)
+        observed_values = histo
+        n = len(data)
 
         # Exponential (same as Gamma with a = 1 and Weibull with c =1)
         distribution.append('Exponential')
         exp_loc, exp_scale = scipy.stats.distributions.expon.fit(data)
-        location_par.append(exp_loc)
-        scale_par.append(exp_scale)
-        shape_par.append(1)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[1])
+        location_par.append((np.around(exp_loc, 4)))
+        scale_par.append((np.around(exp_scale, 4)))
+        shape_par.append((np.around(1, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.expon.cdf, args=scipy.stats.expon.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.expon.cdf(bin_edges, exp_loc, exp_scale))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Gamma
         distribution.append('Gamma')
         a_gam, loc_gam, scale_gam = scipy.stats.distributions.gamma.fit(data)
-        location_par.append(loc_gam)
-        scale_par.append(scale_gam)
-        shape_par.append(a_gam)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[1])
+        location_par.append((np.around(loc_gam, 4)))
+        scale_par.append((np.around(scale_gam, 4)))
+        shape_par.append((np.around(a_gam, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf, args=scipy.stats.gamma.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam, loc_gam, scale_gam))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Erlang-2 (same as Gamma with a = 2)
         distribution.append('Erlang-2')
         a_gam2, loc_gam2, scale_gam2 = scipy.stats.distributions.gamma.fit(data, fa=2)
-        location_par.append(loc_gam2)
-        scale_par.append(scale_gam2)
-        shape_par.append(a_gam2)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=2))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=2))[1])
+        location_par.append((np.around(loc_gam2, 4)))
+        scale_par.append((np.around(scale_gam2, 4)))
+        shape_par.append((np.around(a_gam2, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=2))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=2))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam2, loc_gam2, scale_gam2))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Erlang-3 (same as Gamma with a = 3)
         distribution.append('Erlang-3')
         a_gam3, loc_gam3, scale_gam3 = scipy.stats.distributions.gamma.fit(data, fa=3)
-        location_par.append(loc_gam3)
-        scale_par.append(scale_gam3)
-        shape_par.append(a_gam3)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=3))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=3))[1])
+        location_par.append((np.around(loc_gam3, 4)))
+        scale_par.append((np.around(scale_gam3, 4)))
+        shape_par.append((np.around(a_gam3, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=3))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=3))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam3, loc_gam3, scale_gam3))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Erlang-4 (same as Gamma with a = 4)
         distribution.append('Erlang-4')
         a_gam4, loc_gam4, scale_gam4 = scipy.stats.distributions.gamma.fit(data, fa=4)
-        location_par.append(loc_gam4)
-        scale_par.append(scale_gam4)
-        shape_par.append(a_gam4)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=4))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=4))[1])
+        location_par.append((np.around(loc_gam4, 4)))
+        scale_par.append((np.around(scale_gam4, 4)))
+        shape_par.append((np.around(a_gam4, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=4))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=4))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam4, loc_gam4, scale_gam4))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Erlang-5 (same as Gamma with a = 5)
         distribution.append('Erlang-5')
         a_gam5, loc_gam5, scale_gam5 = scipy.stats.distributions.gamma.fit(data, fa=5)
-        location_par.append(loc_gam5)
-        scale_par.append(scale_gam5)
-        shape_par.append(a_gam5)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=5))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.gamma.cdf,
-                                                     args=scipy.stats.gamma.fit(data, fa=5))[1])
+        location_par.append((np.around(loc_gam5, 4)))
+        scale_par.append((np.around(scale_gam5, 4)))
+        shape_par.append((np.around(a_gam5, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=5))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.gamma.cdf,
+                                                     args=scipy.stats.gamma.fit(data, fa=5))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.gamma.cdf(bin_edges, a_gam5, loc_gam5, scale_gam5))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Normal
         distribution.append('Normal')
         loc_norm, scale_norm = scipy.stats.distributions.norm.fit(data)
-        location_par.append(loc_norm)
-        scale_par.append(scale_norm)
-        shape_par.append(np.nan)
-        shape_2_par.append(np.nan)
-        D.append(scipy.stats.kstest(data, scipy.stats.norm.cdf, args=scipy.stats.norm.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.norm.cdf, args=scipy.stats.norm.fit(data))[1])
+        location_par.append((np.around(loc_norm, 4)))
+        scale_par.append((np.around(scale_norm, 4)))
+        shape_par.append((np.around(np.nan, 4)))
+        shape_2_par.append((np.around(np.nan, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.norm.cdf, args=scipy.stats.norm.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.norm.cdf, args=scipy.stats.norm.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.norm.cdf(bin_edges, loc_norm, scale_norm))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Beta
         distribution.append('Beta')
         a_beta, b_beta, loc_beta, scale_beta = scipy.stats.distributions.beta.fit(data)
-        location_par.append(loc_beta)
-        scale_par.append(scale_beta)
-        shape_par.append(a_beta)
-        shape_2_par.append(b_beta)
-        D.append(scipy.stats.kstest(data, scipy.stats.beta.cdf, args=scipy.stats.beta.fit(data))[0])
-        p.append(scipy.stats.kstest(data, scipy.stats.beta.cdf, args=scipy.stats.beta.fit(data))[1])
+        location_par.append((np.around(loc_beta, 4)))
+        scale_par.append((np.around(scale_beta, 4)))
+        shape_par.append((np.around(a_beta, 4)))
+        shape_2_par.append((np.around(b_beta, 4)))
+        D.append((np.around((scipy.stats.kstest(data, scipy.stats.beta.cdf, args=scipy.stats.beta.fit(data))[0]), 4)))
+        p.append((np.around((scipy.stats.kstest(data, scipy.stats.beta.cdf, args=scipy.stats.beta.fit(data))[1]), 4)))
+        expected_values = n * np.diff(scipy.stats.beta.cdf(bin_edges, a_beta, b_beta, loc_beta, scale_beta))
+        chi_p.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[1]), 4)))
+        chi.append((np.around((scipy.stats.chisquare(observed_values, expected_values)[0]), 4)))
 
         # Create table with results
         df_results_st = pd.DataFrame(distribution, columns=['Distribution_type'])
@@ -763,31 +916,44 @@ def st_distributions(df, location):
         df_results_st['Scale_parameter'] = scale_par
         df_results_st['Shape_parameter'] = shape_par
         df_results_st['Shape_parameter(b)'] = shape_2_par
-        df_results_st['D_value'] = D
-        df_results_st['p_value'] = p
-        df_results_st['p_lim'] = 'undefined'
+        df_results_st['ks_D'] = D
+        df_results_st['ks_p'] = p
+        df_results_st['ks_p_lim'] = 'undefined'
+        df_results_st['chi_p'] = chi_p
+        df_results_st['chi'] = chi
+        df_results_st['chi_p_lim'] = 'undefined'
         for row in df_results_st.itertuples():
-            if float(row.p_value) > 0.05:
-                df_results_st.at[row.Index, 'p_lim'] = 'Yes'
+            if float(row.ks_p) > 0.05:
+                df_results_st.at[row.Index, 'ks_p_lim'] = 'Yes'
             else:
-                df_results_st.at[row.Index, 'p_lim'] = 'No'
+                df_results_st.at[row.Index, 'ks_p_lim'] = 'No'
+        for row in df_results_st.itertuples():
+            if float(row.chi_p) > 0.05:
+                df_results_st.at[row.Index, 'chi_p_lim'] = 'Yes'
+            else:
+                df_results_st.at[row.Index, 'chi_p_lim'] = 'No'
 
         # Plot distributions
         # data cdf
+        hx, hy= np.histogram(data, bins=bin_number, density=True)
+        dx = hy[1] - hy[0]
+        F1 = np.cumsum(hx) * dx
         plt.figure()
-        plt.hist(data, bins=bin_number, density=True, cumulative=True, histtype='step', label='Data')
+        plt.step(hy[1:], F1, 'k-', label='Data')
         # fitted cdf
         plt.plot(x_0, scipy.stats.distributions.expon.cdf(x_0, exp_loc, exp_scale), 'r-', label='Exponential')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam, loc_gam, scale_gam), 'g-', label='Gamma')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam2, loc_gam2, scale_gam2), 'b-', label='Erlang-2')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam3, loc_gam3, scale_gam3), 'm-', label='Erlang-3')
         plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam4, loc_gam4, scale_gam4), 'y-', label='Erlang-4')
-        plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam5, loc_gam5, scale_gam5), 'k-', label='Erlang-5')
+        plt.plot(x_0, scipy.stats.distributions.gamma.cdf(x_0, a_gam5, loc_gam5, scale_gam5), 'orange', label='Erlang-5')
         plt.plot(x_0, scipy.stats.distributions.norm.cdf(x_0,  loc_norm, scale_norm), 'c-', label='Normal')
         plt.plot(x_0, scipy.stats.distributions.beta.cdf(x_0,a_beta, b_beta, loc_beta, scale_beta), 'pink', label='Beta')
         plt.legend()
-        plt.ylabel('Cdf [%]')
+        plt.ylabel('Cdf')
         plt.xlabel('Service times [hr]')
+        plt.xlim(0, data.max())
+        plt.ylim(0, 1)
         plt.title(location + ': distribution fitting for service times')
         plt.show()
 
@@ -800,7 +966,7 @@ def st_distributions(df, location):
 # Fit all distributions for all terminal types
 def fit_all_iat_distr(df, location, terminal_type):
     if terminal_type == 'container' or terminal_type == 'dry_bulk':
-        df_tot = iat_distributions(df, (location + ' Class 0'))
+        df_tot = iat_distributions(df, (location + ' All classes'))
         df_iat_1 = iat_distributions(df_1, (location + ' Class 1'))
         df_iat_2 = iat_distributions(df_2, (location + ' Class 2'))
         df_iat_3 = iat_distributions(df_3, (location + ' Class 3'))
@@ -808,7 +974,7 @@ def fit_all_iat_distr(df, location, terminal_type):
         df_iat_5 = iat_distributions(df_5, (location + ' Class 5'))
         return df_tot, df_iat_1, df_iat_2, df_iat_3, df_iat_4, df_iat_5
     elif terminal_type == 'liquid_bulk':
-        df_tot = iat_distributions(df, (location + ' Class 0'))
+        df_tot = iat_distributions(df, (location + ' All classes'))
         df_iat_1 = iat_distributions(df_1, (location + ' Class 1'))
         df_iat_2 = iat_distributions(df_2, (location + ' Class 2'))
         df_iat_3 = iat_distributions(df_3, (location + ' Class 3'))
@@ -819,7 +985,7 @@ def fit_all_iat_distr(df, location, terminal_type):
 # Fit all distributions for all terminal types
 def fit_all_st_distr(df, location, terminal_type):
     if terminal_type == 'container' or terminal_type == 'dry_bulk':
-        df_tot = st_distributions(df, (location + ' Class 0'))
+        df_tot = st_distributions(df, (location + ' All classes'))
         df_st_1 = st_distributions(df_1, (location + ' Class 1'))
         df_st_2 = st_distributions(df_2, (location + ' Class 2'))
         df_st_3 = st_distributions(df_3, (location + ' Class 3'))
@@ -827,7 +993,7 @@ def fit_all_st_distr(df, location, terminal_type):
         df_st_5 = st_distributions(df_5, (location + ' Class 5'))
         return df_tot, df_st_1, df_st_2, df_st_3, df_st_4, df_st_5
     elif terminal_type == 'liquid_bulk':
-        df_tot = st_distributions(df, (location + ' Class 0'))
+        df_tot = st_distributions(df, (location + ' All classes'))
         df_st_1 = st_distributions(df_1, (location + ' Class 1'))
         df_st_2 = st_distributions(df_2, (location + ' Class 2'))
         df_st_3 = st_distributions(df_3, (location + ' Class 3'))
@@ -839,17 +1005,17 @@ def fit_all_st_distr(df, location, terminal_type):
 if __name__ == '__main__':
     """ ....... INPUTS ......... """
     # Terminal location
-    location = 'lb_zeebrugge'
+    location = 'ct_rdam_apm2'
     # Choose terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
-    terminal_type = 'liquid_bulk'
+    terminal_type = 'container'
     # Number of berths: (1,2,3... number, or if unknown: 0)
-    number_of_berths = 2
+    number_of_berths = 0
     # Operating hours per year:
     operating_hours = 365 * 24
     # Total length terminal [m] (if unknown: 0)
-    length_term = 0
+    length_term = 1500
 
-    # Load raw data
+    # Load data
     df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
 
     # Add service times
@@ -908,8 +1074,11 @@ if __name__ == '__main__':
     plot_inter_arrival_times(df_p, location + ': Inter arrival times based on port entry')
 
     # Plot distributions IAT and ST per vessel class
-    plot_distr_iat_st_class(df_p, 50, terminal_type)
+    plot_distr_iat_st_class(df_p, 50, terminal_type, df_describe_iat, df_describe_st)
 
+    # Plot occupancy
+    plot_occupancy(df_length_occupancy, df_berth_occupancy, length_term, number_of_berths)
+    #
     """ .... EXPORT DATA FRAMES ......"""
     df_p.to_csv('Data-frames/Results_phase_3/' + location + '/Df_stats_' + location + '.csv')
     df_describe_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_describe_iat' + location + '.csv')
@@ -937,7 +1106,6 @@ if __name__ == '__main__':
     if terminal_type == 'container' or terminal_type == 'dry_bulk':
         df_5_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_5' + location + '.csv')
         df_5_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_5' + location + '.csv')
-
 
 
 
