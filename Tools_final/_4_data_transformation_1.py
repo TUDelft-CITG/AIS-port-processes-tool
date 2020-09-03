@@ -380,39 +380,39 @@ if __name__ == '__main__':
     import numpy as np
     from numpy import inf
 
-# Container terminal
-#     # Load data sets
-#     # Cleaned/ preprocessed dataset with column: in small_terminal
-#     data_AIS = pd.read_csv('Processed_data_best_TERMINAL.csv')
-#     data_AIS_0 = data_AIS.copy()
-#     seaweb = pd.read_csv('Seaweb-dataset-BEST.csv')
-#
-#     # Apply processing steps
-#     data_processed = processing_for_ML(data_AIS_0, seaweb)
-#
-#     # Export processed dataframes
-#     data_processed.to_csv('Features_ct_best.csv')
-#
-#     data_AIS0 = pd.read_csv('Processed_data_lisbon_TERMINAL.csv')
-#     seaweb0 = pd.read_csv('Seaweb-dataset-Lisbon-01072019-01022020.csv')
-#     # Apply processing steps
-#     data_processed = processing_for_ML(data_AIS0, seaweb0)
-#     # Export processed dataframes
-#     data_processed.to_csv('Features_ct_lisbon.csv')
-#
-#     data_AIS_1 = pd.read_csv('Processed_data_rdam_apm_TERMINAL.csv')
-#     seaweb1 = pd.read_csv('seaweb_data_rdam_apm.csv')
-#     # Apply processing steps
-#     data_processed = processing_for_ML(data_AIS_1, seaweb1)
-#     # Export processed dataframes
-#     data_processed.to_csv('Features_ct_rdam_apm.csv')
-#
-#     data_AIS2 = pd.read_csv('Processed_data_rdam_euromax_TERMINAL.csv')
-#     seaweb2 = pd.read_csv('seaweb_data_rdam_euromax.csv')
-#     # Apply processing steps
-#     data_processed = processing_for_ML(data_AIS2, seaweb2)
-#     # Export processed dataframes
-#     data_processed.to_csv('Features_ct_rdam_euromax.csv')
+#Container terminal
+    # Load data sets
+    # Cleaned/ preprocessed dataset with column: in small_terminal
+    data_AIS = pd.read_csv('Processed_data_best_TERMINAL.csv')
+    data_AIS_0 = data_AIS.copy()
+    seaweb = pd.read_csv('Seaweb-dataset-BEST.csv')
+
+    # Apply processing steps
+    data_processed = processing_for_ML(data_AIS_0, seaweb)
+
+    # Export processed dataframes
+    data_processed.to_csv('Features_ct_best.csv')
+
+    data_AIS0 = pd.read_csv('Processed_data_lisbon_TERMINAL.csv')
+    seaweb0 = pd.read_csv('Seaweb-dataset-Lisbon-01072019-01022020.csv')
+    # Apply processing steps
+    data_processed = processing_for_ML(data_AIS0, seaweb0)
+    # Export processed dataframes
+    data_processed.to_csv('Features_ct_lisbon.csv')
+
+    data_AIS_1 = pd.read_csv('Processed_data_rdam_apm_TERMINAL.csv')
+    seaweb1 = pd.read_csv('seaweb_data_rdam_apm.csv')
+    # Apply processing steps
+    data_processed = processing_for_ML(data_AIS_1, seaweb1)
+    # Export processed dataframes
+    data_processed.to_csv('Features_ct_rdam_apm.csv')
+
+    data_AIS2 = pd.read_csv('Processed_data_rdam_euromax_TERMINAL.csv')
+    seaweb2 = pd.read_csv('seaweb_data_rdam_euromax.csv')
+    # Apply processing steps
+    data_processed = processing_for_ML(data_AIS2, seaweb2)
+    # Export processed dataframes
+    data_processed.to_csv('Features_ct_rdam_euromax.csv')
 
 # Dry bulk
 

@@ -26,7 +26,6 @@ def adjust_rhdhv_data(data):
     # If necessary, rename column name {"old_name":"new_name"}
     data.rename(columns={"mmsi": "mmsi", "timestamp": "timestamp", "latitude": "lat", "longitude": "lon",
                        "category_ais_platform": "type", "length_overall": "loa", "dead_weight_tonnage": "DWT",
-                         # todo: als type en category op AWS website weer veranderd zijn, terugwisselen!
                        "teu_capacity": "teu_capacity", "breadth": "breadth"}, inplace=True)
     data['timestamp'] = pd.to_datetime(data.timestamp, format='%Y-%m-%d %H:%M')
     return data
@@ -88,7 +87,7 @@ def vessel_categories_DBT(data):
                 row.type != 'Self Discharging Bulk Dry' and row.type != 'Passenger/General Cargo' and \
                 row.type != 'Refrigerated Cargo' and row.type != 'Inland Waterways Dry Cargo / Passenger' and \
                 row.type != 'Inland Waterways Others Non Seagoing' and row.type != 'Other Activities cont' and \
-                row.type != 'Other Activities' and row.type != 'None':
+                row.type != 'Other Activities' and row.type != 'None' and row.type != 'Inland Waterways Tanker':
             drop_list.append(row.Index)
     data = drop_and_report(data, drop_list, 'Keep only certain vessel categories (DBT)')
     return data
@@ -168,11 +167,10 @@ def add_present_polygon_1(data, poly_term, poly_anch1):
     data['in_terminal'] = 0
     data['in_anchorage'] = 0
     for row in data.itertuples():
-        # If coordinate from data_big is in polygon from small: return Yes
+        # If coordinate from data_big is in polygon from small: return 1
         if poly_term.contains(Point(row.lon, row.lat)) == bool(True):
             data.at[row.Index, 'in_terminal'] = 1
         elif poly_anch1.contains(Point(row.lon, row.lat)) == bool(True):
-                # or poly_anch2.contains(Point(row.lon, row.lat)) == bool(True):
             data.at[row.Index, 'in_anchorage'] = 1
 
     return data
@@ -183,7 +181,7 @@ def add_present_polygon_2(data, poly_term, poly_anch1, poly_anch2):
     data['in_terminal'] = 0
     data['in_anchorage'] = 0
     for row in data.itertuples():
-        # If coordinate from data_big is in polygon from small: return Yes
+        # If coordinate from data_big is in polygon from small: return 1
         if poly_term.contains(Point(row.lon, row.lat)) == bool(True):
             data.at[row.Index, 'in_terminal'] = 1
         elif poly_anch1.contains(Point(row.lon, row.lat)) == bool(True) \

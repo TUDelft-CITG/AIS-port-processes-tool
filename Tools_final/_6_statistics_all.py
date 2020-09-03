@@ -1,6 +1,6 @@
 """ Step 6. Run all statistical steps on the processed AIS data
- Input: Processed data [csv file] (entry and exit timestamps for the port area, anchorage area, terminal area)
- Actions: Attach service times, sort by port entry, inter arrival times, sort by port entry (relative to  first moment
+Input: Processed data [csv file] (entry and exit timestamps for the port area, anchorage area, terminal area)
+Actions: Attach service times, sort by port entry, inter arrival times, sort by port entry (relative to  first moment
  in time), visualise study parameters, split into different vessel classes and fit multiple distributions
 Output: Data frame with study parameters, and multiple visualisations (fitted distributions)
  """
@@ -9,16 +9,10 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 import numpy as np
 from _1_data_gathering import drop_and_report
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import figure
-import matplotlib.ticker as mtick
 pd.options.mode.chained_assignment = None
 import scipy
-from sklearn.preprocessing import StandardScaler
 import scipy.stats
 import matplotlib.pyplot as plt
-from fitter import Fitter
-from decimal import Decimal
 
 
 # Remove all vessel tracks with time in polygon < 30 min:
@@ -780,7 +774,6 @@ def st_distributions(df, location):
     if df.shape[0] > 0:
         data = df['service_time[hr]']
         bin_number = 100
-        x_0 = np.linspace(0, data.max(), 100)
         y, x = np.histogram(data, bins=bin_number, density=True)
         x = (x + np.roll(x, -1))[:-1] / 2.0
         x_0 = np.linspace(0, data.max(), 100)
@@ -1005,18 +998,18 @@ def fit_all_st_distr(df, location, terminal_type):
 if __name__ == '__main__':
     """ ....... INPUTS ......... """
     # Terminal location
-    location = 'ct_rdam_apm2'
+    location = 'db_vliss_ovet'
     # Choose terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
-    terminal_type = 'container'
+    terminal_type = 'dry_bulk'
     # Number of berths: (1,2,3... number, or if unknown: 0)
     number_of_berths = 0
     # Operating hours per year:
     operating_hours = 365 * 24
     # Total length terminal [m] (if unknown: 0)
-    length_term = 1500
+    length_term = 950
 
     # Load data
-    df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
+    df = pd.read_csv('Data-frames/Test_data_set/Final_df_' + location + '.csv')
 
     # Add service times
     df = service_times(df)
@@ -1078,34 +1071,34 @@ if __name__ == '__main__':
 
     # Plot occupancy
     plot_occupancy(df_length_occupancy, df_berth_occupancy, length_term, number_of_berths)
-    #
+
     """ .... EXPORT DATA FRAMES ......"""
-    df_p.to_csv('Data-frames/Results_phase_3/' + location + '/Df_stats_' + location + '.csv')
-    df_describe_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_describe_iat' + location + '.csv')
-    df_describe_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_describe_st' + location + '.csv')
+    df_p.to_csv('Data-frames/Test_data_set//Df_stats_' + location + '.csv')
+    df_describe_iat.to_csv('Data-frames/Test_data_set//Df_describe_iat' + location + '.csv')
+    df_describe_st.to_csv('Data-frames/Test_data_set//Df_describe_st' + location + '.csv')
 
     # Only if length occupancy is available
     if length_term > 0:
-        df_length_occupancy.to_csv('Data-frames/Results_phase_3/' + location + '/Df_length_occup_' + location + '.csv')
+        df_length_occupancy.to_csv('Data-frames/Test_data_set//Df_length_occup_' + location + '.csv')
     # Only if terminal occupancy is available
     if number_of_berths > 0:
-        df_berth_occupancy.to_csv('Data-frames/Results_phase_3/' + location + '/Df_berth_occup_' + location + '.csv')
+        df_berth_occupancy.to_csv('Data-frames/Test_data_set//Df_berth_occup_' + location + '.csv')
 
     # Fitted distributions
-    df_tot_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_tot' + location + '.csv')
-    df_1_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_1' + location + '.csv')
-    df_2_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_2' + location + '.csv')
-    df_3_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_3' + location + '.csv')
-    df_4_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_4' + location + '.csv')
-    df_tot_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_tot' + location + '.csv')
-    df_1_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_1' + location + '.csv')
-    df_2_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_2' + location + '.csv')
-    df_3_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_3' + location + '.csv')
-    df_4_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_4' + location + '.csv')
+    df_tot_iat.to_csv('Data-frames/Test_data_set//Df_iat_tot' + location + '.csv')
+    df_1_iat.to_csv('Data-frames/Test_data_set//Df_iat_1' + location + '.csv')
+    df_2_iat.to_csv('Data-frames/Test_data_set//Df_iat_2' + location + '.csv')
+    df_3_iat.to_csv('Data-frames/Test_data_set//Df_iat_3' + location + '.csv')
+    df_4_iat.to_csv('Data-frames/Test_data_set//Df_iat_4' + location + '.csv')
+    df_tot_st.to_csv('Data-frames/Test_data_set//Df_st_tot' + location + '.csv')
+    df_1_st.to_csv('Data-frames/Test_data_set//Df_st_1' + location + '.csv')
+    df_2_st.to_csv('Data-frames/Test_data_set//Df_st_2' + location + '.csv')
+    df_3_st.to_csv('Data-frames/Test_data_set//Df_st_3' + location + '.csv')
+    df_4_st.to_csv('Data-frames/Test_data_set//Df_st_4' + location + '.csv')
 
     if terminal_type == 'container' or terminal_type == 'dry_bulk':
-        df_5_iat.to_csv('Data-frames/Results_phase_3/' + location + '/Df_iat_5' + location + '.csv')
-        df_5_st.to_csv('Data-frames/Results_phase_3/' + location + '/Df_st_5' + location + '.csv')
+        df_5_iat.to_csv('Data-frames/Test_data_set//Df_iat_5' + location + '.csv')
+        df_5_st.to_csv('Data-frames/Test_data_set//Df_st_5' + location + '.csv')
 
 
 
