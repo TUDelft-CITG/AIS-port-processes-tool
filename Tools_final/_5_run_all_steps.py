@@ -363,34 +363,34 @@ if __name__ == '__main__':
     starttime = time.time()
 
     # Load raw data
-    location = 'lb_rdam_gate'
-    df = pd.read_csv('Data-frames/Results_phase_3/' + location + '/Raw_data_port.csv')
+    location = 'db_vliss_ovet'
+    df = pd.read_csv('Data-frames/Test_data_set/Raw_data_port_example.csv')
 
     """ For every new location, necessary inputs """
     # Choose vessel category based on terminal type (Options: 'container', 'dry_bulk', 'liquid_bulk')
-    terminal_type = 'liquid_bulk'  # Input
+    terminal_type = 'dry_bulk'  # Input
 
     # Input latitude and longitude locations of terminal polygon. Every coordinate is a corner of the polygon,
     #    example coordX = (lon, lat)
-    Coord1_term = (4.079255, 51.965373)
-    Coord2_term = (4.072758, 51.974283)
-    Coord3_term = (4.076569, 51.974456)
-    Coord4_term = (4.082441, 51.966336)
+    Coord1_term = (3.702359, 51.442529)
+    Coord2_term = (3.709011, 51.448213)
+    Coord3_term = (3.705600, 51.451141)
+    Coord4_term = (3.695922, 51.444910)
 
     # Input latitude and longitude locations of port polygon.
-    Coord1_port = (3.5870, 52.2648)
-    Coord2_port = (4.2599, 52.0322)
-    Coord3_port = (3.7546, 51.7593)
-    Coord4_port = (2.7823, 52.0119)
+    Coord1_port = (3.3749, 51.3898)
+    Coord2_port = (3.7813, 51.3649)
+    Coord3_port = (3.7813, 51.4767)
+    Coord4_port = (3.4291, 51.4895)
 
     # Choose number of anchorage areas: one or two
-    anchorage_areas = 'two'  # Input
+    anchorage_areas = 'one'  # Input
 
     # Input latitude and longitude locations of anchorage polygon 1.
-    Coord1_anch_1 = (3.5294, 52.2513)
-    Coord2_anch_1 = (3.8177, 52.1874)
-    Coord3_anch_1 = (3.7573, 52.0846)
-    Coord4_anch_1 = (3.4991, 52.1588)
+    Coord1_anch_1 = (3.4744, 51.4181)
+    Coord2_anch_1 = (3.5500, 51.4125)
+    Coord3_anch_1 = (3.5493, 51.4425)
+    Coord4_anch_1 = (3.483663, 51.479179)
 
     # If a second polygon for waiting time is necessary:
     # Input latitude and longitude locations of anchorage polygon 2.
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     Coord4_anch_2 = (3.4387, 51.8477)
 
     # Visualise polygons and data in google maps: 'yes' or 'no'
-    visualise = 'yes'  # Input
+    visualise = 'no'  # Input
 
     # Load classifier to predicted berthed vessels tracks
     with open('classifier_pickle', 'rb') as f:
@@ -409,8 +409,8 @@ if __name__ == '__main__':
     df_new, df_new_term_full = run_all_steps(df, terminal_type, anchorage_areas, visualise, classifier)
 
     # Export data set
-    df_new.to_csv('Data-frames/Results_phase_3/' + location + '/Final_df_' + location + '.csv')
-    df_new_term_full.to_csv('Data-frames/Results_phase_3/' + location + '/Final_df_full_term_' + location + '.csv')
+    df_new.to_csv('Data-frames/Test_data_set/Final_df_' + location + '.csv')
+    # df_new_term_full.to_csv('Data-frames/Results_phase_3/' + location + '/Final_df_full_term_' + location + '.csv')
 
     print('Time for 5.run_all_steps:', (time.time() - starttime)/60, 'minutes')
 
