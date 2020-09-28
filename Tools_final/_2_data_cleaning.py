@@ -52,8 +52,9 @@ def delete_faulty_inputs(data):
     drop_list = list()
     for row in data.itertuples():
         # If mmsi is not of expected length, exclude data point
-        if len(str(row.mmsi)) != 9:
-            drop_list.append(row.Index)
+      # For test data set mmsi is adjusted to anonymise (below statement not valid for test data)
+#         if len(str(row.mmsi)) != 9:
+#             drop_list.append(row.Index)
         # If coordinates are invalid, exclude data point
         elif (float(row.lat) < -90) or (float(row.lat) > 90):
             drop_list.append(row.Index)
