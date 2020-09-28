@@ -280,7 +280,6 @@ def figure_google_maps_1(data_terminal, data_anchorage, lon_list_term, lat_list_
     gmap.polygon(lat_list_anch1, lon_list_anch1, color='grey')
     # gmap.polygon(lat_list_anch2, lon_list_anch2, color='grey')
 
-    gmap.apikey = "AIzaSyBEwJIaiYm1Vd5GDbMOqDRh9zPYzz0hCaU"
     gmap.draw("C:\\Users\\909884\\Desktop\\visualise_location.html")
 
 
